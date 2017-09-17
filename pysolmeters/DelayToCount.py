@@ -22,7 +22,7 @@
 # ===============================================================================
 """
 # noinspection PyBroadException
-from pysol_meters.AtomicInt import AtomicInt
+from pysolmeters.AtomicInt import AtomicInt
 
 # noinspection PyBroadException
 try:

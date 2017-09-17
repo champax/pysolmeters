@@ -1,11 +1,11 @@
-pysol_meters
+pysolmeters
 ============
 
 Welcome to pysol
 
 Copyright (C) 2013/2017 Laurent Labatut / Laurent Champagnac
 
-pysol_meters is a set of python helpers to populate and get counters, anywhere in the code.
+pysolmeters is a set of python helpers to populate and get counters, anywhere in the code.
 
 It can be used to instrument low-level APIs and validate stuff with unit testing or push counters toward some monitoring softwares.
 

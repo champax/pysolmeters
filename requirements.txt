@@ -1,5 +1,5 @@
 # pysol
-pysol_base
+pysolbase
 
 # gevent stack
 greenlet

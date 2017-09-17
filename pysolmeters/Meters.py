@@ -24,9 +24,9 @@
 import logging
 from threading import Lock
 
-from pysol_meters.AtomicFloat import AtomicFloatSafe, AtomicFloat
-from pysol_meters.AtomicInt import AtomicIntSafe, AtomicInt
-from pysol_meters.DelayToCount import DelayToCountSafe, DelayToCount
+from pysolmeters.AtomicFloat import AtomicFloatSafe, AtomicFloat
+from pysolmeters.AtomicInt import AtomicIntSafe, AtomicInt
+from pysolmeters.DelayToCount import DelayToCountSafe, DelayToCount
 
 logger = logging.getLogger(__name__)
 

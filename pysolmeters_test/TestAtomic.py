@@ -25,10 +25,10 @@
 import logging
 import unittest
 
-from pysol_base.SolBase import SolBase
+from pysolbase.SolBase import SolBase
 
-from pysol_meters.AtomicFloat import AtomicFloat, AtomicFloatSafe
-from pysol_meters.AtomicInt import AtomicInt, AtomicIntSafe
+from pysolmeters.AtomicFloat import AtomicFloat, AtomicFloatSafe
+from pysolmeters.AtomicInt import AtomicInt, AtomicIntSafe
 
 logger = logging.getLogger(__name__)
 
