@@ -67,7 +67,7 @@ setup(
     author=p_author,
     author_email=p_email,
     url=p_url,
-    description=p_name + " APIs",
+    description="Python helpers to populate and get counters, anywhere in the code",
 
     # Version, format : Major.Minor.Revision
     version=p_version,
