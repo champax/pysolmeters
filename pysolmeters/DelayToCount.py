@@ -22,9 +22,10 @@
 # ===============================================================================
 """
 # noinspection PyBroadException
+from pysolmeters import max_int
 from pysolmeters.AtomicInt import AtomicInt
 
-# noinspection PyBroadException
+# noinspection PyBroadException,PyPep8
 try:
     from collections import OrderedDict
 except:
@@ -53,13 +54,13 @@ class DelayToCount(object):
         :param ar_delay: Delay array to handle in millis (must finish with max int value, value in increasing order)
         :type ar_delay: list,tuple,None
         :param instance_name: Instance name
-        :type instance_name: str
+        :type instance_name: bytes
         :return Nothing
         """
 
         # Default is required
         if not ar_delay:
-            ar_delay = [0, 50, 100, 500, 1000, 2500, 5000, 10000, 30000, 60000, sys.maxint]
+            ar_delay = [0, 50, 100, 500, 1000, 2500, 5000, 10000, 30000, 60000, max_int]
 
         # Name
         self._instance_name = instance_name
@@ -68,8 +69,8 @@ class DelayToCount(object):
         self._sorted_dict = OrderedDict()
 
         # Validate max int at the end (otherwise we may not be able to process and store some values)
-        if ar_delay[len(ar_delay) - 1] != sys.maxint:
-            raise Exception("sys.maxint required in last ar_delay item")
+        if ar_delay[len(ar_delay) - 1] != max_int:
+            raise Exception("max_int required in last ar_delay item")
 
         # Validate order and prepare the hash
         prev = None
@@ -93,9 +94,9 @@ class DelayToCount(object):
         """
 
         # Found the good one
-        aif = self._sorted_dict[sys.maxint]
-        for ms, ai in self._sorted_dict.iteritems():
-            if ms <= delay_ms and ms != sys.maxint:
+        aif = self._sorted_dict[max_int]
+        for ms, ai in self._sorted_dict.items():
+            if ms <= delay_ms and ms != max_int:
                 aif = ai
             else:
                 break
@@ -108,11 +109,11 @@ class DelayToCount(object):
         Write to logger
         """
 
-        ar = self._sorted_dict.keys()
+        ar = list(self._sorted_dict.keys())
         for i in range(0, len(ar) - 1):
             ms1 = ar[i]
             ms2 = ar[i + 1]
-            if ms2 == sys.maxint:
+            if ms2 == max_int:
                 ms2 = "MAX"
             ai = self._sorted_dict[ms1]
             logger.info("%s [%s-%s], c=%s", self._instance_name, ms1, ms2, ai.get())
@@ -129,7 +130,7 @@ class DelayToCount(object):
         for i in range(0, len(ar) - 1):
             ms1 = ar[i]
             ms2 = ar[i + 1]
-            if ms2 == sys.maxint:
+            if ms2 == max_int:
                 ms2 = "MAX"
             ai = self._sorted_dict[ms1]
             out_k = "{0}|{1}-{2}".format(self._instance_name, ms1, ms2)
@@ -153,7 +154,7 @@ class DelayToCountSafe(DelayToCount):
         :param ar_delay: Delay array to handle in millis (must finish with max int value, value in increasing order)
         :type ar_delay: list,tuple,None
         :param instance_name: Instance name
-        :type instance_name: str
+        :type instance_name: bytes
         :return Nothing
         """
 

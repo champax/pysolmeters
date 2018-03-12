@@ -34,21 +34,29 @@ def requirement_read(req_file):
     :return: Doc
     """
     req_list = list()
+    dep_list = list()
     for row_buffer in open(req_file).readlines():
         # Skip empty
         if len(row_buffer.strip()) == 0:
             continue
-            # Skip "- ..."
-        if re.match("^-", row_buffer):
+        # Skip "- ..."
+        elif re.match("^-", row_buffer):
             continue
-            # Skip "# ..."
-        if re.match("^#", row_buffer):
+        # Skip "# ..."
+        elif re.match("^#", row_buffer):
             continue
+        # Git stuff (direct)
+        elif re.match("^git", row_buffer):
+            pkg = row_buffer.split('#')[-1]
+            dep_list.append(row_buffer.strip() + '-9876543210')
+            req_list.append(pkg.replace('egg=', '').rstrip())
+        else:
+            # Ok
+            req_list.append(row_buffer)
 
-        # Ok
-        req_list.append(row_buffer)
-    return req_list
-
+    print("req_list={0}".format(req_list))
+    print("dep_list={0}".format(dep_list))
+    return req_list, dep_list
 
 # ===========================
 # SETUP
@@ -59,6 +67,10 @@ p_author = "Laurent Champagnac"
 p_email = "champagnac.laurent@gmail.com"
 p_url = "https://knock.center"
 p_version = "1.0.1"
+
+# Load
+req_list, dep_list = requirement_read("requirements.txt")
+test_req_list, _ = requirement_read("requirements_test.txt")
 
 setup(
 
@@ -98,10 +110,13 @@ setup(
     ],
 
     # Dependencies
-    install_requires=requirement_read("requirements.txt"),
+    install_requires=req_list,
+
+    # Direct deps
+    dependency_links=dep_list,
 
     # Dependencies : test
-    tests_require=requirement_read("requirements_test.txt"),
+    tests_require=test_req_list,
 
     # Zip
     zip_safe=False,

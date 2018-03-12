@@ -23,6 +23,8 @@
 """
 from threading import Lock
 
+from pysolmeters import PY2
+
 
 class AtomicInt(object):
     """
@@ -87,7 +89,11 @@ class AtomicInt(object):
 
         if self.maximum_value and self._current_value > self.maximum_value:
             # Compute & reset with reminder if maximum value reached
-            div = long(self._current_value / self.maximum_value)
+            if PY2:
+                # noinspection PyCompatibility
+                div = long(self._current_value / self.maximum_value)
+            else:
+                div = int(self._current_value / self.maximum_value)
             reminder = self._current_value % self.maximum_value
             if div > 0:
                 if reminder == 0:
