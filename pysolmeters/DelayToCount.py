@@ -33,8 +33,6 @@ except:
     from ordereddict import OrderedDict
 import logging
 from multiprocessing import Lock
-import sys
-
 
 logger = logging.getLogger(__name__)
 

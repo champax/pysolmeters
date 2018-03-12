@@ -52,8 +52,8 @@ class Meters(object):
         Hash if required or alloc
         :param d: dict
         :type d: dict
-        :param key: bytes
-        :type key: bytes
+        :param key: str
+        :type key: str
         :param c_type: Class to alloc if required
         :type c_type: type
         :return object
@@ -96,8 +96,8 @@ class Meters(object):
     def ai(cls, key):
         """
         Get AtomicIntSafe from key, add it if required
-        :param key: bytes
-        :type key: bytes
+        :param key: str
+        :type key: str
         :return: AtomicIntSafe
         :rtype AtomicIntSafe
         """
@@ -108,8 +108,8 @@ class Meters(object):
     def af(cls, key):
         """
         Get AtomicFloatSafe from key, add it if required
-        :param key: bytes
-        :type key: bytes
+        :param key: str
+        :type key: str
         :return: AtomicFloatSafe
         :rtype AtomicFloatSafe
         """
@@ -120,8 +120,8 @@ class Meters(object):
     def dtc(cls, key):
         """
         Get DelayToCount from key, add it if required
-        :param key: bytes
-        :type key: bytes
+        :param key: str
+        :type key: str
         :return: DelayToCountSafe
         :rtype DelayToCountSafe
         """
@@ -136,8 +136,8 @@ class Meters(object):
     def aii(cls, key, increment_value=1):
         """
         Get AtomicIntSafe from key, add it if required and increment
-        :param key: bytes
-        :type key: bytes
+        :param key: str
+        :type key: str
         :param increment_value: Value to increment
         :type increment_value: int
         :return: AtomicIntSafe
@@ -152,8 +152,8 @@ class Meters(object):
     def afi(cls, key, increment_value=1):
         """
         Get AtomicFloatSafe from key, add it if required and increment
-        :param key: bytes
-        :type key: bytes
+        :param key: str
+        :type key: str
         :param increment_value: Value to increment
         :type increment_value: int, float
         :return: AtomicFloatSafe
@@ -168,8 +168,8 @@ class Meters(object):
     def dtci(cls, key, delay_ms, increment_value=1):
         """
         Get DelayToCount from key, add it if required and put
-        :param key: bytes
-        :type key: bytes
+        :param key: str
+        :type key: str
         :param delay_ms: Delay in millis
         :type delay_ms: int
         :param increment_value: Value to increment
@@ -190,8 +190,8 @@ class Meters(object):
     def aig(cls, key):
         """
         Get AtomicIntSafe from key, add it if required and return value
-        :param key: bytes
-        :type key: bytes
+        :param key: str
+        :type key: str
         :return: int
         :rtype int
         """
@@ -203,8 +203,8 @@ class Meters(object):
     def afg(cls, key):
         """
         Get AtomicFloatSafe from key, add it if required and return value
-        :param key: bytes
-        :type key: bytes
+        :param key: str
+        :type key: str
         :return: float
         :rtype float
         """

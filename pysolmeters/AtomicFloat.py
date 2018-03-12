@@ -102,7 +102,7 @@ class AtomicFloat(object):
         if self.maximum_value and self._current_value > self.maximum_value:
             # Compute & reset with reminder if maximum value reached
             if PY2:
-                # noinspection PyCompatibility
+                # noinspection PyCompatibility,PyUnresolvedReferences
                 div = long(self._current_value / self.maximum_value)
             else:
                 div = int(self._current_value / self.maximum_value)

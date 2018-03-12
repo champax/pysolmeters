@@ -59,7 +59,7 @@ if PY3:
 else:
     # noinspection PyUnresolvedReferences,PyCompatibility
     string_types = basestring,
-    # noinspection PyUnresolvedReferences
+    # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
     integer_types = (int, long)
     # noinspection PyUnresolvedReferences
     text_type = unicode, str

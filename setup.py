@@ -33,8 +33,8 @@ def requirement_read(req_file):
     :param req_file: Doc
     :return: Doc
     """
-    req_list = list()
-    dep_list = list()
+    local_req_list = list()
+    local_dep_list = list()
     for row_buffer in open(req_file).readlines():
         # Skip empty
         if len(row_buffer.strip()) == 0:
@@ -46,17 +46,19 @@ def requirement_read(req_file):
         elif re.match("^#", row_buffer):
             continue
         # Git stuff (direct)
+        # From : https://github.com/pypa/pip/issues/3610#issuecomment-356687173
         elif re.match("^git", row_buffer):
             pkg = row_buffer.split('#')[-1]
-            dep_list.append(row_buffer.strip() + '-9876543210')
-            req_list.append(pkg.replace('egg=', '').rstrip())
+            local_dep_list.append(row_buffer.strip() + '-9876543210')
+            local_req_list.append(pkg.replace('egg=', '').rstrip())
         else:
             # Ok
-            req_list.append(row_buffer)
+            local_req_list.append(row_buffer)
 
-    print("req_list={0}".format(req_list))
-    print("dep_list={0}".format(dep_list))
-    return req_list, dep_list
+    print("local_req_list={0}".format(local_req_list))
+    print("local_dep_list={0}".format(local_dep_list))
+    return local_req_list, local_dep_list
+
 
 # ===========================
 # SETUP
