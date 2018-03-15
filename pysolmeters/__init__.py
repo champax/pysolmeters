@@ -32,11 +32,11 @@ PY3 = sys.version_info[0] >= 3
 # Switches:
 # PY2        PY3
 # str        bytes
-# unicode    str
+# str    str
 
 # Code :
 # a) replace str by bytes
-# b) replace unicode by str
+# b) replace str by str
 
 # Then :
 if PY3:
@@ -62,7 +62,7 @@ else:
     # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
     integer_types = (int, long)
     # noinspection PyUnresolvedReferences
-    text_type = unicode, str
+    text_type = str, str
     binary_type = str
 
     # noinspection PyUnresolvedReferences
@@ -77,12 +77,12 @@ else:
 
     # noinspection PyShadowingBuiltins
     # noinspection PyUnresolvedReferences
-    str = unicode
+    str = str
 
     # noinspection PyUnresolvedReferences
     max_int = sys.maxint
 
     # noinspection PyUnresolvedReferences
-    print("unicode={0}".format(unicode))
+    print("str={0}".format(str))
     print("str={0}".format(str))
     print("bytes={0}".format(bytes))
