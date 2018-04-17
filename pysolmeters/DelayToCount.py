@@ -114,7 +114,10 @@ class DelayToCount(object):
             if ms2 == max_int:
                 ms2 = "MAX"
             ai = self._sorted_dict[ms1]
-            logger.info("%s [%s-%s], c=%s", self._instance_name, ms1, ms2, ai.get())
+            v = ai.get()
+            if v == 0:
+                continue
+            logger.info("%s [%s-%s], c=%s", self._instance_name, ms1, ms2, v)
 
     def to_dict(self):
         """

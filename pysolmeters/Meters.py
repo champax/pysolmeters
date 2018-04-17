@@ -222,8 +222,10 @@ class Meters(object):
         Write
         """
 
-        for k, d in cls._hash_meter.items():
-            for key, o in d.items():
+        for k in reversed(sorted(cls._hash_meter.keys())):
+            d = cls._hash_meter[k]
+            for key in sorted(d.keys()):
+                o = d[key]
                 if isinstance(o, (AtomicInt, AtomicIntSafe, AtomicFloat, AtomicFloatSafe)):
                     logger.info("k=%s, v=%s", key, o.get())
                 elif isinstance(o, (DelayToCount, DelayToCountSafe)):
