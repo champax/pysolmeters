@@ -91,3 +91,11 @@ class TestMeters(unittest.TestCase):
 
         # Write
         Meters.write_to_logger()
+
+        # Serialize
+        ar_json = Meters.meters_to_udp_format(send_pid=True)
+        for cur_ar in ar_json:
+            logger.info("Got cur_ar=%s", cur_ar)
+
+        # Send to daemon (assuming its up locally)
+        Meters.send_udp_to_knockdaemon()

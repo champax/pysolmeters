@@ -2,6 +2,9 @@
 # pysolbase
 git+https://github.com/champax/pysolbase.git@py3#egg=pysolbase
 
+# ujson
+ujson
+
 # gevent stack
 greenlet
 gevent

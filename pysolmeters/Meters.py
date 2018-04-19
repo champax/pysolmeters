@@ -22,11 +22,18 @@
 # ===============================================================================
 """
 import logging
+import os
 from threading import Lock
+
+# noinspection PyUnresolvedReferences
+import ujson
+from pysolbase.PlatformTools import PlatformTools
+from pysolbase.SolBase import SolBase
 
 from pysolmeters.AtomicFloat import AtomicFloatSafe, AtomicFloat
 from pysolmeters.AtomicInt import AtomicIntSafe, AtomicInt
 from pysolmeters.DelayToCount import DelayToCountSafe, DelayToCount
+from pysolmeters.Udp.UdpClient import UdpClient
 
 logger = logging.getLogger(__name__)
 
@@ -232,3 +239,110 @@ class Meters(object):
                     o.log()
                 else:
                     logger.info("k=%s, o=%s", key, o)
+
+    # =============================
+    # SEND TO KNOCK DAEMON
+    # =============================
+
+    @classmethod
+    def meters_to_udp_format(cls, send_pid=True):
+        """
+        Meter to udp
+        :param send_pid: bool
+        :type send_pid: bool
+        :return list
+        :rtype list
+        """
+
+        # ---------------------------
+        # SERIALIZE
+        # ---------------------------
+
+        # List to serialize
+        ar_json = list()
+
+        # Pid
+        if send_pid:
+            d_tag = {"PID": str(os.getpid())}
+        else:
+            d_tag = {}
+
+        # Browse and build ar_json
+        for k, d in cls._hash_meter.items():
+            for key, o in d.items():
+                if isinstance(o, (AtomicInt, AtomicIntSafe, AtomicFloat, AtomicFloatSafe)):
+                    v = o.get()
+                    ar_local = [
+                        # probe name
+                        key,
+                        # tag dict
+                        d_tag,
+                        # value
+                        v,
+                        # epoch
+                        SolBase.dt_to_epoch(SolBase.datecurrent()),
+                        # additional tags
+                        {}
+                    ]
+                    ar_json.append(ar_local)
+                elif isinstance(o, (DelayToCount, DelayToCountSafe)):
+                    ar_dtc = o.to_udp_list(d_tag)
+                    ar_json.extend(ar_dtc)
+                else:
+                    logger.warning("Not handled class=%s, o=%s", SolBase.get_classname(o), o)
+
+        # Debug
+        for cur_ar in ar_json:
+            logger.debug("Meters serialized, cur_ar=%s", cur_ar)
+
+        # Over
+        return ar_json
+
+    # noinspection PyProtectedMember
+    @classmethod
+    def send_udp_to_knockdaemon(cls, send_pid=True,
+                                linux_socket_name="/var/run/knockdaemon2.udp.socket",
+                                windows_host="127.0.0.1",
+                                windows_port=63184):
+        """
+        Send all meters to knock daemon via upd.
+        :param send_pid: If true, send current pid as tag (default)
+        :type send_pid: bool
+        :param linux_socket_name: str
+        :type linux_socket_name: str
+        :param windows_host: str
+        :type windows_host: str
+        :param windows_port: int
+        :type windows_port: int
+        """
+
+        # ---------------------------
+        # Serialize
+        # ---------------------------
+        ar_json = cls.meters_to_udp_format(send_pid)
+        b_buf = SolBase.unicode_to_binary(ujson.dumps(ar_json, ensure_ascii=False), "utf-8")
+
+        # ---------------------------
+        # UDP PUSH
+        # ---------------------------
+        u = None
+        try:
+            # Alloc
+            u = UdpClient()
+            logger.info("Sending meters to udp, b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
+
+            if len(b_buf) > u._max_udp_size:
+                # TODO : Split ar_json in case of overload
+                logger.warning("Udp size overload (possible lost), b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
+
+            # Connect
+            if PlatformTools.get_distribution_type() == "windows":
+                u.connect_inet(windows_host, windows_port)
+            else:
+                u.connect(linux_socket_name)
+
+            # Send
+            u.send_binary(b_buf)
+        finally:
+            if u:
+                u.disconnect()

@@ -22,6 +22,8 @@
 # ===============================================================================
 """
 # noinspection PyBroadException
+from pysolbase.SolBase import SolBase
+
 from pysolmeters import max_int
 from pysolmeters.AtomicInt import AtomicInt
 
@@ -138,6 +140,51 @@ class DelayToCount(object):
             out_v = ai.get()
             d[out_k] = out_v
         return d
+
+    def to_udp_list(self, d_tag=None, d_opt_tag=None):
+        """
+        To dict
+        :param d_tag: dict,None
+        :type d_tag: dict,None
+        :param d_opt_tag: dict,None
+        :type d_opt_tag: dict,None
+        :return list
+        :rtype: list
+        """
+
+        if not d_tag:
+            d_tag = {}
+        if not d_opt_tag:
+            d_opt_tag = {}
+        ar_out = list()
+        ar = list(self._sorted_dict.keys())
+        for i in range(0, len(ar) - 1):
+            # Build key
+            ms1 = ar[i]
+            ms2 = ar[i + 1]
+            if ms2 == max_int:
+                ms2 = "MAX"
+            out_k = "{0}_{1}-{2}".format(self._instance_name, ms1, ms2)
+            # Get value
+            ai = self._sorted_dict[ms1]
+            out_v = ai.get()
+            # Build local array
+            ar_local = [
+                # probe name
+                out_k,
+                # tag dict
+                d_tag,
+                # value
+                out_v,
+                # epoch
+                SolBase.dt_to_epoch(SolBase.datecurrent()),
+                # additional tags
+                d_opt_tag
+            ]
+            # Add to output
+            ar_out.append(ar_local)
+        # Over
+        return ar_out
 
 
 class DelayToCountSafe(DelayToCount):
