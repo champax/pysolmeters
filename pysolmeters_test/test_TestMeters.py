@@ -94,6 +94,7 @@ class TestMeters(unittest.TestCase):
 
         # Serialize
         ar_json = Meters.meters_to_udp_format(send_pid=True)
+        logger.info("Got ar_json=%s", ar_json)
         for cur_ar in ar_json:
             logger.info("Got cur_ar=%s", cur_ar)
 
