@@ -23,10 +23,11 @@
 """
 import logging
 import os
-from threading import Lock
-
 # noinspection PyUnresolvedReferences
 import ujson
+from threading import Lock
+
+import gevent
 from pysolbase.PlatformTools import PlatformTools
 from pysolbase.SolBase import SolBase
 
@@ -94,6 +95,8 @@ class Meters(object):
                 "a_float": dict(),
                 "dtc": dict()
             }
+            Meters.UDP_SCHEDULER_STARTED = False
+            Meters.UDP_SCHEDULER_GREENLET = None
 
     # =============================
     # HASH / ALLOC
@@ -245,11 +248,13 @@ class Meters(object):
     # =============================
 
     @classmethod
-    def meters_to_udp_format(cls, send_pid=True):
+    def meters_to_udp_format(cls, send_pid=True, send_dtc=False):
         """
         Meter to udp
         :param send_pid: bool
         :type send_pid: bool
+        :param send_dtc: If true, send DelayToCount. Disabled by default (not efficient histogram push).
+        :param send_dtc: bool
         :return list
         :rtype list
         """
@@ -286,8 +291,9 @@ class Meters(object):
                     ]
                     ar_json.append(ar_local)
                 elif isinstance(o, (DelayToCount, DelayToCountSafe)):
-                    ar_dtc = o.to_udp_list(d_tag)
-                    ar_json.extend(ar_dtc)
+                    if send_dtc:
+                        ar_dtc = o.to_udp_list(d_tag)
+                        ar_json.extend(ar_dtc)
                 else:
                     logger.warning("Not handled class=%s, o=%s", SolBase.get_classname(o), o)
 
@@ -298,16 +304,25 @@ class Meters(object):
         # Over
         return ar_json
 
+    # =================================
+    # UDP SEND
+    # =================================
+
     # noinspection PyProtectedMember
     @classmethod
-    def send_udp_to_knockdaemon(cls, send_pid=True,
-                                linux_socket_name="/var/run/knockdaemon2.udp.socket",
-                                windows_host="127.0.0.1",
-                                windows_port=63184):
+    def send_udp_to_knockdaemon(
+            cls,
+            send_pid=True,
+            send_dtc=False,
+            linux_socket_name="/var/run/knockdaemon2.udp.socket",
+            windows_host="127.0.0.1",
+            windows_port=63184):
         """
         Send all meters to knock daemon via upd.
         :param send_pid: If true, send current pid as tag (default)
         :type send_pid: bool
+        :param send_dtc: If true, send DelayToCount. Disabled by default (not efficient histogram push).
+        :param send_dtc: bool
         :param linux_socket_name: str
         :type linux_socket_name: str
         :param windows_host: str
@@ -319,7 +334,7 @@ class Meters(object):
         # ---------------------------
         # Serialize
         # ---------------------------
-        ar_json = cls.meters_to_udp_format(send_pid)
+        ar_json = cls.meters_to_udp_format(send_pid, send_dtc)
         b_buf = SolBase.unicode_to_binary(ujson.dumps(ar_json, ensure_ascii=False), "utf-8")
 
         # ---------------------------
@@ -346,3 +361,133 @@ class Meters(object):
         finally:
             if u:
                 u.disconnect()
+
+    # =================================
+    # UDP SCHEDULER
+    # =================================
+
+    UDP_SCHEDULER_LOCK = Lock()
+    UDP_SCHEDULER_STARTED = False
+    UDP_SCHEDULER_GREENLET = None
+
+    @classmethod
+    def udp_scheduler_start(
+            cls,
+            send_interval_ms=60000,
+            send_pid=True,
+            send_dtc=False,
+            linux_socket_name="/var/run/knockdaemon2.udp.socket",
+            windows_host="127.0.0.1",
+            windows_port=63184):
+        """
+        Start udp send scheduler to daemon.
+        :param send_interval_ms: int
+        :type send_interval_ms: int
+        :param send_pid: If true, send current pid as tag (default)
+        :type send_pid: bool
+        :param send_dtc: If true, send DelayToCount. Disabled by default (not efficient histogram push).
+        :param send_dtc: bool
+        :param linux_socket_name: str
+        :type linux_socket_name: str
+        :param windows_host: str
+        :type windows_host: str
+        :param windows_port: int
+        :type windows_port: int
+        """
+
+        with Meters.UDP_SCHEDULER_LOCK:
+            if Meters.UDP_SCHEDULER_STARTED:
+                logger.warn("Already started, exiting")
+                return
+
+            # Schedule
+            Meters.UDP_SCHEDULER_GREENLET = gevent.spawn_later(
+                send_interval_ms * 0.001,
+                cls.udp_scheduler_run,
+                send_interval_ms,
+                send_pid,
+                send_dtc,
+                linux_socket_name,
+                windows_host,
+                windows_port,
+            )
+
+            # Ok
+            Meters.UDP_SCHEDULER_STARTED = True
+            logger.info("Udp scheduler started")
+
+    @classmethod
+    def udp_scheduler_stop(cls):
+        """
+        Stop udp scheduler
+        """
+        with Meters.UDP_SCHEDULER_LOCK:
+            # Reset greenlet in all cases
+            Meters.UDP_SCHEDULER_GREENLET = None
+
+            # Check
+            if not Meters.UDP_SCHEDULER_STARTED:
+                logger.warn("Already stopped, exiting")
+                return
+
+            Meters.UDP_SCHEDULER_STARTED = False
+            logger.info("Udp scheduler stopped")
+
+    @classmethod
+    def udp_scheduler_run(
+            cls,
+            send_interval_ms=60000,
+            send_pid=True,
+            send_dtc=False,
+            linux_socket_name="/var/run/knockdaemon2.udp.socket",
+            windows_host="127.0.0.1",
+            windows_port=63184):
+        """
+        Udp scheduler run (push to daemon and re-schedule if required.
+        :param send_interval_ms: int
+        :type send_interval_ms: int
+        :param send_pid: If true, send current pid as tag (default)
+        :type send_pid: bool
+        :param send_dtc: If true, send DelayToCount. Disabled by default (not efficient histogram push).
+        :param send_dtc: bool
+        :param linux_socket_name: str
+        :type linux_socket_name: str
+        :param windows_host: str
+        :type windows_host: str
+        :param windows_port: int
+        :type windows_port: int
+        """
+
+        try:
+            # If not started, exit
+            if not Meters.UDP_SCHEDULER_STARTED:
+                return
+
+            # Push to daemon
+            cls.send_udp_to_knockdaemon(
+                send_pid,
+                send_dtc,
+                linux_socket_name,
+                windows_host,
+                windows_port
+            )
+
+            # Stat
+            logger.info("Udp scheduler push ok")
+            Meters.aii("k.meters.udp.run.ok")
+        except Exception as e:
+            logger.warn("Ex=%s", SolBase.extostr(e))
+            Meters.aii("k.meters.udp.run.ex")
+        finally:
+            # Re-schedule if required
+            if Meters.UDP_SCHEDULER_STARTED:
+                Meters.UDP_SCHEDULER_GREENLET = gevent.spawn_later(
+                    send_interval_ms * 0.001,
+                    cls.udp_scheduler_run,
+                    send_interval_ms,
+                    send_pid,
+                    send_dtc,
+                    linux_socket_name,
+                    windows_host,
+                    windows_port,
+                )

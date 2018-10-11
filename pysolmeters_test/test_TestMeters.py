@@ -51,6 +51,9 @@ class TestMeters(unittest.TestCase):
         self.assertTrue(SolBase._voodoo_initialized)
         self.assertTrue(SolBase._logging_initialized)
 
+        # Reset
+        Meters.reset()
+
     def tearDown(self):
         """
         Setup (called after each test)
@@ -93,10 +96,64 @@ class TestMeters(unittest.TestCase):
         Meters.write_to_logger()
 
         # Serialize
-        ar_json = Meters.meters_to_udp_format(send_pid=True)
+        ar_json = Meters.meters_to_udp_format(send_pid=True, send_dtc=True)
+        logger.info("Got ar_json=%s", ar_json)
+        for cur_ar in ar_json:
+            logger.info("Got cur_ar=%s", cur_ar)
+
+        # Serialize, no dtc
+        ar_json = Meters.meters_to_udp_format(send_pid=True, send_dtc=False)
         logger.info("Got ar_json=%s", ar_json)
         for cur_ar in ar_json:
             logger.info("Got cur_ar=%s", cur_ar)
 
         # Send to daemon (assuming its up locally)
         Meters.send_udp_to_knockdaemon()
+        Meters.send_udp_to_knockdaemon(send_dtc=True)
+        Meters.send_udp_to_knockdaemon(send_dtc=False)
+
+        # ------------------------
+        # UDP Scheduler test
+        # ------------------------
+
+        # Check
+        self.assertIsNone(Meters.UDP_SCHEDULER_GREENLET)
+        self.assertFalse(Meters.UDP_SCHEDULER_STARTED)
+
+        # Start
+        Meters.udp_scheduler_start(send_interval_ms=500)
+
+        # Check
+        self.assertIsNotNone(Meters.UDP_SCHEDULER_GREENLET)
+        self.assertTrue(Meters.UDP_SCHEDULER_STARTED)
+
+        # Start again
+        Meters.udp_scheduler_start(send_interval_ms=500)
+
+        # Check again
+        self.assertIsNotNone(Meters.UDP_SCHEDULER_GREENLET)
+        self.assertTrue(Meters.UDP_SCHEDULER_STARTED)
+
+        # Interval is 500 => we sleep 3.250 sec, we assume we must have at least 500, 1000, 1500, 2000, 2500, 3000 run => 6 runs
+        SolBase.sleep(3250)
+
+        # Check
+        self.assertGreaterEqual(Meters.aig("k.meters.udp.run.ok"), 6)
+        self.assertEqual(Meters.aig("k.meters.udp.run.ex"), 0)
+        self.assertIsNotNone(Meters.UDP_SCHEDULER_GREENLET)
+        self.assertTrue(Meters.UDP_SCHEDULER_STARTED)
+
+        # We stop
+        Meters.udp_scheduler_stop()
+        self.assertIsNone(Meters.UDP_SCHEDULER_GREENLET)
+        self.assertFalse(Meters.UDP_SCHEDULER_STARTED)
+
+        # Sleep again and check no more running
+        cur_run = Meters.aig("k.meters.udp.run.ok")
+        SolBase.sleep(2000)
+        self.assertEqual(cur_run, Meters.aig("k.meters.udp.run.ok"))
+
+
+
+
+
