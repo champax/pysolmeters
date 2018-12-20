@@ -22,6 +22,8 @@
 # ===============================================================================
 """
 # noinspection PyBroadException
+from threading import Lock
+
 from pysolbase.SolBase import SolBase
 
 from pysolmeters import max_int
@@ -34,7 +36,6 @@ except:
     # noinspection PyPep8Naming,PyPackageRequirements,PyUnresolvedReferences
     from ordereddict import OrderedDict
 import logging
-from multiprocessing import Lock
 
 logger = logging.getLogger(__name__)
 
