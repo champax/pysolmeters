@@ -84,8 +84,15 @@ class TestMeters(unittest.TestCase):
         self.assertIn(s2, Meters._hash_meter["tags_hash"])
         self.assertEquals(d2, Meters._hash_meter["tags_hash"][s2])
 
+        d3 = {"a": "za", "b": "zb"}
+        s3 = Meters._tags_hash_compute_and_store(d3)
+        self.assertIsNotNone(s3)
+        self.assertGreater(len(s3), 0)
+        self.assertIn(s3, Meters._hash_meter["tags_hash"])
+        self.assertNotEqual(s1, s3)
+
         self.assertEquals(s1, s2)
-        self.assertEquals(len(Meters._hash_meter["tags_hash"]), 1)
+        self.assertEquals(len(Meters._hash_meter["tags_hash"]), 2)
 
         Meters.reset()
         self.assertEquals(len(Meters._hash_meter["tags_hash"]), 0)

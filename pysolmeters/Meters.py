@@ -71,7 +71,7 @@ class Meters(object):
         :rtype str
         """
 
-        s_hash = str(hash(frozenset(d.items())))
+        s_hash = str(hash(ujson.dumps(d, sort_keys=True)))
 
         # Store if required
         if s_hash not in cls._hash_meter:
