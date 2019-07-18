@@ -68,7 +68,7 @@ p_name = "pysolmeters"
 p_author = "Laurent Champagnac"
 p_email = "champagnac.laurent@gmail.com"
 p_url = "https://knock.center"
-p_version = "1.1.4"
+p_version = "1.1.5"
 
 # Load
 req_list, dep_list = requirement_read("requirements.txt")
@@ -97,7 +97,7 @@ setup(
 
     # Data files
     data_files=[
-        ("", ["requirements_test.txt", "requirements.txt", "README.md", "LICENSE.txt"]),
+        ("", ["requirements_test.txt", "requirements.txt", "README.md", "LICENSE.md"]),
     ],
 
     # Classifiers
