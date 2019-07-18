@@ -105,9 +105,11 @@ class DelayToCount(object):
         # Go
         aif.increment(increment_value)
 
-    def log(self):
+    def log(self, s_tags):
         """
         Write to logger
+        :param s_tags: str
+        :type s_tags: str
         """
 
         ar = list(self._sorted_dict.keys())
@@ -120,7 +122,7 @@ class DelayToCount(object):
             v = ai.get()
             if v == 0:
                 continue
-            logger.info("%s [%s-%s], c=%s", self._instance_name, ms1, ms2, v)
+            logger.info("%s%s [%s-%s], c=%s", self._instance_name, s_tags, ms1, ms2, v)
 
     def to_dict(self):
         """
@@ -224,12 +226,14 @@ class DelayToCountSafe(DelayToCount):
         with self._lock:
             DelayToCount.put(self, delay_ms, increment_value)
 
-    def log(self):
+    def log(self, s_tags):
         """
         Write to logger
+        :param s_tags: dict,None
+        :type s_tags: dict,None
         """
         with self._lock:
-            DelayToCount.log(self)
+            DelayToCount.log(self, s_tags)
 
     def to_dict(self):
         """
