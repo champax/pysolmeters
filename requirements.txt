@@ -1,3 +1,7 @@
+# PYPI :
+# workon pysolmeters
+# python setup.py sdist && twine check dist/* && twine upload dist/*; rm -rf './dist'; rm -rf pysol*.egg-info; echo "OVER"
+
 # pysol
 pysolbase
 
