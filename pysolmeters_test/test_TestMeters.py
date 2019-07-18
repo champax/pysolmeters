@@ -23,6 +23,7 @@
 """
 
 import logging
+import os
 import unittest
 
 from pysolbase.SolBase import SolBase
@@ -54,11 +55,75 @@ class TestMeters(unittest.TestCase):
         # Reset
         Meters.reset()
 
+        # Bench
+        self.per_loop = 10000
+        self.max_ms = 2000
+
     def tearDown(self):
         """
         Setup (called after each test)
         """
         pass
+
+    def test_tags_hash(self):
+        """
+        Test
+        """
+
+        d1 = {"a": "va", "b": "vb"}
+        s1 = Meters._tags_hash_compute_and_store(d1)
+        self.assertIsNotNone(s1)
+        self.assertGreater(len(s1), 0)
+        self.assertIn(s1, Meters._hash_meter["tags_hash"])
+        self.assertEquals(d1, Meters._hash_meter["tags_hash"][s1])
+
+        d2 = {"b": "vb", "a": "va"}
+        s2 = Meters._tags_hash_compute_and_store(d2)
+        self.assertIsNotNone(s2)
+        self.assertGreater(len(s2), 0)
+        self.assertIn(s2, Meters._hash_meter["tags_hash"])
+        self.assertEquals(d2, Meters._hash_meter["tags_hash"][s2])
+
+        d3 = {"a": "za", "b": "zb"}
+        s3 = Meters._tags_hash_compute_and_store(d3)
+        self.assertIsNotNone(s3)
+        self.assertGreater(len(s3), 0)
+        self.assertIn(s3, Meters._hash_meter["tags_hash"])
+        self.assertNotEqual(s1, s3)
+
+        self.assertEquals(s1, s2)
+        self.assertEquals(len(Meters._hash_meter["tags_hash"]), 2)
+
+        Meters.reset()
+        self.assertEquals(len(Meters._hash_meter["tags_hash"]), 0)
+
+        s_tags_1 = Meters.tags_format_for_logger(d1)
+        s_tags_2 = Meters.tags_format_for_logger(d2)
+        logger.info("Got s_tags_1=%s", s_tags_1)
+        logger.info("Got s_tags_2=%s", s_tags_2)
+        self.assertEquals(s_tags_1, s_tags_2)
+        self.assertEquals(s_tags_1, " (a:va,b:vb) ")
+
+    def test_key(self):
+        """
+        Test
+        """
+
+        d1 = {"a": "va", "b": "vb"}
+        s1 = Meters._tags_hash_compute_and_store(d1)
+        k1 = Meters._key_compute("zzz", d1)
+        self.assertEquals(k1, "zzz#" + s1)
+
+        s_key, s_sash = Meters._key_split(k1)
+        self.assertEquals(s_key, "zzz")
+        self.assertEquals(s_sash, s1)
+
+        self.assertEquals(Meters._key_compute("zzz", None), "zzz#")
+        self.assertEquals(Meters._key_compute("zzz", {}), "zzz#")
+
+        s_key, s_sash = Meters._key_split("zzz#")
+        self.assertEquals(s_key, "zzz")
+        self.assertEquals(s_sash, None)
 
     def test_meters(self):
         """
@@ -91,6 +156,293 @@ class TestMeters(unittest.TestCase):
         self.assertIsInstance(dtc1a, DelayToCountSafe)
         dtc1b = Meters.dtc("dtc1")
         self.assertEqual(id(dtc1a), id(dtc1b))
+
+        Meters.dtci("dtc1", 0)
+        Meters.dtci("dtc1", 50)
+        Meters.dtci("dtc1", 100)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
+
+        # Write
+        Meters.write_to_logger()
+
+    def _bench(self, per_sec_multi, key, method_to_call, *args):
+        """
+        Internal bench
+        :param per_sec_multi: Multiply per_sec (case of lists)
+        :type per_sec_multi: int
+        :param key: For log
+        :type key: str
+        :param method_to_call: Method point
+        :type callable
+        :param args: args
+        :type args: object
+        """
+
+        if isinstance(args[0], list):
+            # noinspection PyArgumentList,PyTypeChecker
+            logger.debug("Using list, len=%s", len(args[0]))
+
+        i = 0
+        loop = 0
+        per_loop = self.per_loop
+        ms = SolBase.mscurrent()
+        while SolBase.msdiff(ms) < self.max_ms:
+            for _ in range(0, per_loop):
+                method_to_call(*args)
+            i += self.per_loop
+            loop += 1
+        i = i * per_sec_multi
+        ms = SolBase.msdiff(ms)
+        sec = ms / 1000.0
+        per_sec = i / sec
+        ms = round(ms, 2)
+        sec = round(sec, 2)
+        per_sec = round(per_sec, 2)
+        logger.info("%32s, loop=%8s, i=%8s, ms=%8.2f, sec=%6.2f, per_sec=%12.2f", key, loop, i, ms, sec, per_sec)
+
+    def test_meters_bench(self):
+        """
+        Test
+        """
+
+        logger.info("Bench now")
+
+        Meters.reset()
+        self._bench(1, "aii_tags_NO", Meters.aii, "aii1", 1, None)
+
+        Meters.reset()
+        self._bench(1, "aii_tags_go", Meters.aii, "aii1", 1, {"T1": "V1", "T2": "V2"})
+
+        Meters.reset()
+        self._bench(1, "dtc_tags_NO", Meters.dtci, "aii1", 0.1, 1, None)
+
+        Meters.reset()
+        self._bench(1, "dtc_tags_go", Meters.dtci, "aii1", 0.1, 1, {"T1": "V1", "T2": "V2"})
+
+        Meters.reset()
+        self._bench(1, "dtc_tags_big_NO", Meters.dtci, "aii1", 1000000000, 1, None)
+
+        Meters.reset()
+        self._bench(1, "dtc_tags_big_go", Meters.dtci, "aii1", 1000000000, 1, {"T1": "V1", "T2": "V2"})
+
+        # For logs format
+        SolBase.sleep(100)
+        logger.info("Bench over")
+
+    def test_meters_with_tags_a_with_udp_check(self):
+        """
+        Test
+        """
+
+        hca = Meters._tags_hash_compute_and_store({"flag": "FA"})
+        hcb = Meters._tags_hash_compute_and_store({"flag": "FB"})
+
+        Meters.aii("ai1")
+        Meters.aii("ai1", tags={"flag": "FA"})
+        Meters.aii("ai1", tags={"flag": "FA"})
+        Meters.aii("ai1", tags={"flag": "FB"})
+        Meters.aii("ai1", tags={"flag": "FB"})
+        Meters.aii("ai1", tags={"flag": "FB"})
+
+        Meters.dtci("dtc1", 0)
+        Meters.dtci("dtc1", 50)
+        Meters.dtci("dtc1", 100)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
+
+        Meters.dtci("dtc1", 0, tags={"flag": "FA"})
+        Meters.dtci("dtc1", 50, tags={"flag": "FA"})
+        Meters.dtci("dtc1", 100, tags={"flag": "FA"})
+
+        Meters.dtci("dtc1", 0, tags={"flag": "FB"})
+        Meters.dtci("dtc1", 50, tags={"flag": "FB"})
+        Meters.dtci("dtc1", 100, tags={"flag": "FB"})
+        Meters.dtci("dtc1", 0, tags={"flag": "FB"})
+        Meters.dtci("dtc1", 50, tags={"flag": "FB"})
+        Meters.dtci("dtc1", 100, tags={"flag": "FB"})
+
+        self.assertEquals(Meters._hash_meter["a_int"]["ai1#"].get(), 1)
+        self.assertEquals(Meters._hash_meter["a_int"]["ai1#" + hca].get(), 2)
+        self.assertEquals(Meters._hash_meter["a_int"]["ai1#" + hcb].get(), 3)
+
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[0].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[50].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[100].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[500].get(), 0)
+
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[0].get(), 2)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[50].get(), 2)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[100].get(), 2)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[500].get(), 0)
+
+        # Write
+        Meters.write_to_logger()
+
+        # Upd check
+        ar_udp = Meters.meters_to_udp_format(send_pid=True, send_tags=True, send_dtc=True)
+
+        total_check = 0
+        total_ok = 0
+        total_ko_not_found = 0
+        total_ko_multiple_found = 0
+        pid = str(os.getpid())
+        for s_key, d_tag, v in [
+            ("ai1", {"PID": pid}, 1),
+            ("ai1", {"flag": "FA", "PID": pid}, 2),
+            ("ai1", {"flag": "FB", "PID": pid}, 3),
+
+            ("dtc1_0-50", {"PID": pid}, 1),
+            ("dtc1_50-100", {"PID": pid}, 1),
+            ("dtc1_100-500", {"PID": pid}, 1),
+            ("dtc1_500-1000", {"PID": pid}, 0),
+            ("dtc1_1000-2500", {"PID": pid}, 0),
+            ("dtc1_2500-5000", {"PID": pid}, 0),
+            ("dtc1_5000-10000", {"PID": pid}, 0),
+            ("dtc1_10000-30000", {"PID": pid}, 0),
+            ("dtc1_30000-60000", {"PID": pid}, 0),
+            ("dtc1_60000-MAX", {"PID": pid}, 0),
+
+            ("dtc1_0-50", {"flag": "FA", "PID": pid}, 1),
+            ("dtc1_50-100", {"flag": "FA", "PID": pid}, 1),
+            ("dtc1_100-500", {"flag": "FA", "PID": pid}, 1),
+            ("dtc1_500-1000", {"flag": "FA", "PID": pid}, 0),
+            ("dtc1_1000-2500", {"flag": "FA", "PID": pid}, 0),
+            ("dtc1_2500-5000", {"flag": "FA", "PID": pid}, 0),
+            ("dtc1_5000-10000", {"flag": "FA", "PID": pid}, 0),
+            ("dtc1_10000-30000", {"flag": "FA", "PID": pid}, 0),
+            ("dtc1_30000-60000", {"flag": "FA", "PID": pid}, 0),
+            ("dtc1_60000-MAX", {"flag": "FA", "PID": pid}, 0),
+
+            ("dtc1_0-50", {"flag": "FB", "PID": pid}, 2),
+            ("dtc1_50-100", {"flag": "FB", "PID": pid}, 2),
+            ("dtc1_100-500", {"flag": "FB", "PID": pid}, 2),
+            ("dtc1_500-1000", {"flag": "FB", "PID": pid}, 0),
+            ("dtc1_1000-2500", {"flag": "FB", "PID": pid}, 0),
+            ("dtc1_2500-5000", {"flag": "FB", "PID": pid}, 0),
+            ("dtc1_5000-10000", {"flag": "FB", "PID": pid}, 0),
+            ("dtc1_10000-30000", {"flag": "FB", "PID": pid}, 0),
+            ("dtc1_30000-60000", {"flag": "FB", "PID": pid}, 0),
+            ("dtc1_60000-MAX", {"flag": "FB", "PID": pid}, 0),
+
+        ]:
+            total_check += 1
+
+            # Locate it
+            found = 0
+            for check_key, check_tag, check_v, _, _ in ar_udp:
+                if check_key == s_key and check_tag == d_tag and check_v == v:
+                    found += 1
+
+            # Check
+            if found == 0:
+                total_ko_not_found += 1
+            elif found > 1:
+                total_ko_multiple_found += 1
+            else:
+                total_ok += 1
+
+        # Final
+        self.assertEquals(total_ko_multiple_found, 0)
+        self.assertEquals(total_ko_multiple_found, 0)
+        self.assertEquals(total_ok, total_check)
+        self.assertEquals(len(ar_udp), total_check)
+
+    def test_meters_with_tags_b(self):
+        """
+        Test
+        """
+
+        hca = Meters._tags_hash_compute_and_store({"flag1": "FA"})
+        hcb = Meters._tags_hash_compute_and_store({"flag2": "FB"})
+
+        Meters.aii("ai1")
+        Meters.aii("ai1", tags={"flag1": "FA"})
+        Meters.aii("ai1", tags={"flag1": "FA"})
+        Meters.aii("ai1", tags={"flag2": "FB"})
+        Meters.aii("ai1", tags={"flag2": "FB"})
+        Meters.aii("ai1", tags={"flag2": "FB"})
+
+        Meters.dtci("dtc1", 0)
+        Meters.dtci("dtc1", 50)
+        Meters.dtci("dtc1", 100)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
+
+        Meters.dtci("dtc1", 0, tags={"flag1": "FA"})
+        Meters.dtci("dtc1", 50, tags={"flag1": "FA"})
+        Meters.dtci("dtc1", 100, tags={"flag1": "FA"})
+
+        Meters.dtci("dtc1", 0, tags={"flag2": "FB"})
+        Meters.dtci("dtc1", 50, tags={"flag2": "FB"})
+        Meters.dtci("dtc1", 100, tags={"flag2": "FB"})
+        Meters.dtci("dtc1", 0, tags={"flag2": "FB"})
+        Meters.dtci("dtc1", 50, tags={"flag2": "FB"})
+        Meters.dtci("dtc1", 100, tags={"flag2": "FB"})
+
+        self.assertEquals(Meters._hash_meter["a_int"]["ai1#"].get(), 1)
+        self.assertEquals(Meters._hash_meter["a_int"]["ai1#" + hca].get(), 2)
+        self.assertEquals(Meters._hash_meter["a_int"]["ai1#" + hcb].get(), 3)
+
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[0].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[50].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[100].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[500].get(), 0)
+
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[0].get(), 2)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[50].get(), 2)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[100].get(), 2)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[500].get(), 0)
+
+        # Write
+        Meters.write_to_logger()
+
+    @unittest.skip("Need knockdaemon2")
+    def test_meters_to_udp(self):
+        """
+        Test
+        """
+
+        ai1a = Meters.ai("ai1")
+        self.assertIsInstance(ai1a, AtomicIntSafe)
+        ai1b = Meters.ai("ai1")
+        self.assertEqual(id(ai1a), id(ai1b))
+
+        ai1a = Meters.aii("ai1")
+        self.assertEqual(ai1a.get(), 1)
+        ai1a = Meters.aii("ai1", 2)
+        self.assertEqual(ai1a.get(), 3)
+        self.assertEqual(ai1a.get(), Meters.aig("ai1"))
+
+        af1a = Meters.af("af1")
+        self.assertIsInstance(af1a, AtomicFloatSafe)
+        af1b = Meters.af("af1")
+        self.assertEqual(id(af1a), id(af1b))
+
+        af1a = Meters.afi("af1")
+        self.assertEqual(af1a.get(), 1.0)
+        af1a = Meters.afi("af1", 2.0)
+        self.assertEqual(af1a.get(), 3.0)
+        self.assertEqual(af1a.get(), Meters.afg("af1"))
+
+        dtc1a = Meters.dtc("dtc1")
+        self.assertIsInstance(dtc1a, DelayToCountSafe)
+        dtc1b = Meters.dtc("dtc1")
+        self.assertEqual(id(dtc1a), id(dtc1b))
+
+        Meters.dtci("dtc1", 0)
+        Meters.dtci("dtc1", 50)
+        Meters.dtci("dtc1", 100)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
+        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
 
         # Write
         Meters.write_to_logger()
@@ -152,8 +504,3 @@ class TestMeters(unittest.TestCase):
         cur_run = Meters.aig("k.meters.udp.run.ok")
         SolBase.sleep(2000)
         self.assertEqual(cur_run, Meters.aig("k.meters.udp.run.ok"))
-
-
-
-
-
