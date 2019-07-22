@@ -477,6 +477,7 @@ class Meters(object):
     def send_udp_to_knockdaemon(
             cls,
             send_pid=True,
+            send_tags=True,
             send_dtc=False,
             linux_socket_name="/var/run/knockdaemon2.udp.socket",
             windows_host="127.0.0.1",
@@ -485,6 +486,8 @@ class Meters(object):
         Send all meters to knock daemon via upd.
         :param send_pid: If true, send current pid as tag (default)
         :type send_pid: bool
+        :param send_tags: Send custom tags (default True)
+        :type send_tags: bool
         :param send_dtc: If true, send DelayToCount. Disabled by default (not efficient histogram push).
         :param send_dtc: bool
         :param linux_socket_name: str
@@ -498,7 +501,11 @@ class Meters(object):
         # ---------------------------
         # Serialize
         # ---------------------------
-        ar_json = cls.meters_to_udp_format(send_pid, send_dtc)
+        ar_json = cls.meters_to_udp_format(
+            send_pid=send_pid,
+            send_tags=send_tags,
+            send_dtc=send_dtc,
+        )
         b_buf = SolBase.unicode_to_binary(ujson.dumps(ar_json, ensure_ascii=False), "utf-8")
 
         # ---------------------------
