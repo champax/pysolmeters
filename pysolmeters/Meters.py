@@ -546,6 +546,7 @@ class Meters(object):
             cls,
             send_interval_ms=60000,
             send_pid=True,
+            send_tags=True,
             send_dtc=False,
             linux_socket_name="/var/run/knockdaemon2.udp.socket",
             windows_host="127.0.0.1",
@@ -556,6 +557,8 @@ class Meters(object):
         :type send_interval_ms: int
         :param send_pid: If true, send current pid as tag (default)
         :type send_pid: bool
+        :param send_tags: Send custom tags (default True)
+        :type send_tags: bool
         :param send_dtc: If true, send DelayToCount. Disabled by default (not efficient histogram push).
         :param send_dtc: bool
         :param linux_socket_name: str
@@ -577,6 +580,7 @@ class Meters(object):
                 cls.udp_scheduler_run,
                 send_interval_ms,
                 send_pid,
+                send_tags,
                 send_dtc,
                 linux_socket_name,
                 windows_host,
@@ -609,6 +613,7 @@ class Meters(object):
             cls,
             send_interval_ms=60000,
             send_pid=True,
+            send_tags=True,
             send_dtc=False,
             linux_socket_name="/var/run/knockdaemon2.udp.socket",
             windows_host="127.0.0.1",
@@ -619,6 +624,8 @@ class Meters(object):
         :type send_interval_ms: int
         :param send_pid: If true, send current pid as tag (default)
         :type send_pid: bool
+        :param send_tags: Send custom tags (default True)
+        :type send_tags: bool
         :param send_dtc: If true, send DelayToCount. Disabled by default (not efficient histogram push).
         :param send_dtc: bool
         :param linux_socket_name: str
@@ -637,6 +644,7 @@ class Meters(object):
             # Push to daemon
             cls.send_udp_to_knockdaemon(
                 send_pid,
+                send_tags,
                 send_dtc,
                 linux_socket_name,
                 windows_host,
@@ -657,6 +665,7 @@ class Meters(object):
                     cls.udp_scheduler_run,
                     send_interval_ms,
                     send_pid,
+                    send_tags,
                     send_dtc,
                     linux_socket_name,
                     windows_host,
