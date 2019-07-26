@@ -472,6 +472,57 @@ class Meters(object):
     # UDP SEND
     # =================================
 
+    @classmethod
+    def chunk_udp_array(cls, ar_json, max_size_bytes, margin=0.5):
+        """
+        Chunk a daemon udp list (list of list) toward a list of binary buffer, ready for udp send
+        :param ar_json: list of list
+        :type ar_json: list
+        :param max_size_bytes: int (max size of each binary buffer)
+        :type max_size_bytes: int
+        :param margin: Size margin per chunk (0.5 = 50%)
+        :type margin: float
+        :return: list of binary buffer, list of chunked ar_json inner items (list of list of list)
+        :rtype tuple
+        """
+
+        # Check
+        if ar_json is None or len(ar_json) == 0:
+            return list(), list()
+
+        # Full serialize
+        b_buf = SolBase.unicode_to_binary(ujson.dumps(ar_json, ensure_ascii=False), "utf-8")
+
+        # Bin len
+        bin_len = len(b_buf)
+
+        # Item count
+        i_count = len(ar_json)
+
+        # Average weight in bytes of each item
+        avg_weight_bytes = float(bin_len) / float(i_count)
+
+        # Number of items per chunk, with 50% margin
+        item_per_chunk = float(max_size_bytes) / avg_weight_bytes
+        item_per_chunk = int(item_per_chunk * margin)
+
+        # Lets go
+        ar_bin_out = list()
+        ar_json_out = list()
+        x = 0
+        y = len(ar_json)
+        for i in range(x, y, item_per_chunk):
+            x = i
+            ar_temp = ar_json[x:x + item_per_chunk]
+            b_temp = SolBase.unicode_to_binary(ujson.dumps(ar_temp, ensure_ascii=False), "utf-8")
+            if len(b_temp) > max_size_bytes:
+                logger.warning("Udp chunk overload, max=%s, got=%s", max_size_bytes, len(b_temp))
+            ar_bin_out.append(b_temp)
+            ar_json_out.append(ar_temp)
+
+        # Over
+        return ar_bin_out, ar_json_out
+
     # noinspection PyProtectedMember
     @classmethod
     def send_udp_to_knockdaemon(
@@ -506,7 +557,6 @@ class Meters(object):
             send_tags=send_tags,
             send_dtc=send_dtc,
         )
-        b_buf = SolBase.unicode_to_binary(ujson.dumps(ar_json, ensure_ascii=False), "utf-8")
 
         # ---------------------------
         # UDP PUSH
@@ -515,11 +565,14 @@ class Meters(object):
         try:
             # Alloc
             u = UdpClient()
-            logger.info("Sending meters to udp, b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
 
-            if len(b_buf) > u._max_udp_size:
-                # TODO : Split ar_json in case of overload
-                logger.warning("Udp size overload (possible lost), b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
+            # ar_json is a list of list
+            # we have a maximum size, we must chunk it....
+            ar_bin_chunk, _ = cls.chunk_udp_array(
+                ar_json=ar_json,
+                max_size_bytes=u._max_udp_size,
+                margin=u._udp_margin
+            )
 
             # Connect
             if PlatformTools.get_distribution_type() == "windows":
@@ -527,8 +580,18 @@ class Meters(object):
             else:
                 u.connect(linux_socket_name)
 
-            # Send
-            u.send_binary(b_buf)
+            # Fire
+            for b_buf in ar_bin_chunk:
+                if len(b_buf) > u._max_udp_size:
+                    logger.warning("Udp size overload (possible lost), b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
+
+                # Send
+                logger.info("Sending meters to udp (chunked), b_buf.len=%s, chunks=%s, udp_max=%s", len(b_buf), len(ar_bin_chunk), u._max_udp_size)
+
+                u.send_binary(b_buf)
+
+                # Switch
+                SolBase.sleep(0)
         finally:
             if u:
                 u.disconnect()
