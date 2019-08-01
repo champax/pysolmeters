@@ -612,12 +612,14 @@ class Meters(object):
                 u.connect(linux_socket_name)
 
             # Fire
+            i = 0
             for b_buf in ar_bin_chunk:
+                i += 1
                 if len(b_buf) > u._max_udp_size:
                     logger.warning("Udp size overload (possible lost), b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
 
                 # Send
-                logger.info("Sending meters to udp (chunked), b_buf.len=%s, chunks=%s, udp_max=%s", len(b_buf), len(ar_bin_chunk), u._max_udp_size)
+                logger.info("Sending meters to udp (chunked), b_buf.len=%s, chunks=%s/%s, udp_max=%s", len(b_buf), i, len(ar_bin_chunk), u._max_udp_size)
 
                 u.send_binary(b_buf)
 
