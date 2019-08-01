@@ -35,19 +35,16 @@ class UdpClient(object):
     Udp client
     """
 
-    def __init__(self, max_udp_size=61440, udp_margin=0.5):
+    def __init__(self, max_udp_size=61440):
         """
         Constructor
         For max udp size, refer to internet (ie http://stackoverflow.com/questions/14993000/the-most-reliable-and-efficient-udp-packet-size)
         As we act mostly on localhost, and MTU localhost is 65536, we assume a default of 61440 (we take some margin)
         :param max_udp_size: int
         :type max_udp_size: int
-        :param udp_margin: Udp margin (0.5 = 50%). Used for udp chunking.
-        :type udp_margin: float
         """
 
         self._max_udp_size = max_udp_size
-        self._udp_margin = udp_margin
         self._soc = None
 
     def connect(self, socket_name):

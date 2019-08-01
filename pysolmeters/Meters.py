@@ -473,15 +473,14 @@ class Meters(object):
     # =================================
 
     @classmethod
-    def chunk_udp_array(cls, ar_json, max_size_bytes, margin=0.5):
+    def chunk_udp_array_via_serialization(cls, ar_json, max_size_bytes):
         """
         Chunk a daemon udp list (list of list) toward a list of binary buffer, ready for udp send
+        This method uses per item serialization with manual concatenations.
         :param ar_json: list of list
         :type ar_json: list
         :param max_size_bytes: int (max size of each binary buffer)
         :type max_size_bytes: int
-        :param margin: Size margin per chunk (0.5 = 50%)
-        :type margin: float
         :return: list of binary buffer, list of chunked ar_json inner items (list of list of list)
         :rtype tuple
         """
@@ -490,37 +489,70 @@ class Meters(object):
         if ar_json is None or len(ar_json) == 0:
             return list(), list()
 
-        # Full serialize
-        b_buf = SolBase.unicode_to_binary(ujson.dumps(ar_json, ensure_ascii=False), "utf-8")
+        # We are going to serialize as :
+        # [
+        #   [...],
+        #   [...]
+        # ]
 
-        # Bin len
-        bin_len = len(b_buf)
-
-        # Item count
-        i_count = len(ar_json)
-
-        # Average weight in bytes of each item
-        avg_weight_bytes = float(bin_len) / float(i_count)
-
-        # Number of items per chunk, with 50% margin
-        item_per_chunk = float(max_size_bytes) / avg_weight_bytes
-        item_per_chunk = int(item_per_chunk * margin)
-
-        # Lets go
         ar_bin_out = list()
         ar_json_out = list()
-        x = 0
-        y = len(ar_json)
-        for i in range(x, y, item_per_chunk):
-            x = i
-            ar_temp = ar_json[x:x + item_per_chunk]
-            b_temp = SolBase.unicode_to_binary(ujson.dumps(ar_temp, ensure_ascii=False), "utf-8")
-            if len(b_temp) > max_size_bytes:
-                logger.warning("Udp chunk overload, max=%s, got=%s", max_size_bytes, len(b_temp))
-            ar_bin_out.append(b_temp)
-            ar_json_out.append(ar_temp)
 
+        # Temp array
+        ar_temp_s = list()
+        ar_temp_ar = list()
+
+        # Current temp bytes (with opening [ and closing ] and a margin for "," => so init to 3)
+        cur_temp_bytes = 3
+
+        # Browse
+        for cur_ar in ar_json:
+            # Serialize this one
+            s_cur_ar = ujson.dumps(cur_ar)
+            cur_len = len(s_cur_ar)
+
+            # Check
+            if cur_temp_bytes + cur_len > max_size_bytes:
+                # -----------------------------
+                # Got overload => close this one and initialize a new one
+                # -----------------------------
+                s_final = "[" + ",".join(ar_temp_s) + "]"
+                b_final = SolBase.unicode_to_binary(s_final, "utf8")
+                assert len(b_final) < max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes)
+
+                # Push output
+                ar_bin_out.append(b_final)
+                ar_json_out.append(ar_temp_ar)
+
+                # Re-init with current item
+                cur_temp_bytes = 3 + cur_len
+                ar_temp_s = [s_cur_ar]
+                ar_temp_ar = [cur_ar]
+            else:
+                # -----------------------------
+                # Accumulate
+                # -----------------------------
+
+                # +1 for the ","
+                cur_temp_bytes += cur_len + 1
+                ar_temp_s.append(s_cur_ar)
+                ar_temp_ar.append(cur_ar)
+
+        # -----------------------------
+        # Finish it if we have pending
+        # -----------------------------
+        if len(ar_temp_s) > 0:
+            s_final = "[" + ",".join(ar_temp_s) + "]"
+            b_final = SolBase.unicode_to_binary(s_final, "utf8")
+            assert len(b_final) < max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes)
+
+            # Push
+            ar_bin_out.append(b_final)
+            ar_json_out.append(ar_temp_ar)
+
+        # -----------------------------
         # Over
+        # -----------------------------
         return ar_bin_out, ar_json_out
 
     # noinspection PyProtectedMember
@@ -568,10 +600,9 @@ class Meters(object):
 
             # ar_json is a list of list
             # we have a maximum size, we must chunk it....
-            ar_bin_chunk, _ = cls.chunk_udp_array(
+            ar_bin_chunk, _ = cls.chunk_udp_array_via_serialization(
                 ar_json=ar_json,
                 max_size_bytes=u._max_udp_size,
-                margin=u._udp_margin
             )
 
             # Connect
