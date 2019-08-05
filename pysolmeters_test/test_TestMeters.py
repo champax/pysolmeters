@@ -208,6 +208,8 @@ class TestMeters(unittest.TestCase):
         Test
         """
 
+        # For logs format
+        SolBase.sleep(100)
         logger.info("Bench now")
 
         Meters.reset()
@@ -227,6 +229,29 @@ class TestMeters(unittest.TestCase):
 
         Meters.reset()
         self._bench(1, "dtc_tags_big_go", Meters.dtci, "aii1", 1000000000, 1, {"T1": "V1", "T2": "V2"})
+
+        # For logs format
+        SolBase.sleep(100)
+        logger.info("Bench over")
+
+    def test_meters_bench_chunk_udp_array_via_serialization(self):
+        """
+        Test
+        """
+
+        # For logs format
+        SolBase.sleep(100)
+        logger.info("Bench now")
+
+        self.per_loop = 1
+
+        self._meters_inject(count=5000)
+        ar_json = Meters.meters_to_udp_format(send_pid=True, send_tags=True, send_dtc=False)
+        self._bench(1, "udp_chunk_no_dtc", Meters.chunk_udp_array_via_serialization, ar_json, 60000)
+
+        self._meters_inject(count=5000)
+        ar_json = Meters.meters_to_udp_format(send_pid=True, send_tags=True, send_dtc=True)
+        self._bench(1, "udp_chunk_dtc", Meters.chunk_udp_array_via_serialization, ar_json, 60000)
 
         # For logs format
         SolBase.sleep(100)
@@ -402,6 +427,95 @@ class TestMeters(unittest.TestCase):
 
         # Write
         Meters.write_to_logger()
+
+    @classmethod
+    def _meters_inject(cls, count):
+        """
+        Inject meters for chunk test
+        :param count: int
+        :type count: int
+        """
+
+        # Inject meters
+        Meters.reset()
+        for i in range(0, count):
+
+            # 10 tags each
+            d_tags = dict()
+            for k in range(0, 10):
+                d_tags["TAG_aaaaaaaaaaaaaaaaa_%s_%s" % (i, k)] = "VAL_aaaaaaaaaaaaaaaaa_%s_%s" % (i, k)
+
+            # Inject
+            Meters.aii("k.meters.aii_udp_check_%s" % i, tags=d_tags)
+
+            # Dtc
+            for ms in [0, 10, 100, 500, 5000, 10000, 60000]:
+                Meters.dtci("k.meters.dtci_udp_check_%s" % i, ms, tags=d_tags)
+
+    def test_meters_chunk_udp_array_via_serialization(self):
+        """
+        Test
+        """
+
+        # ----------------------
+        # Udp, no DTC
+        # ----------------------
+        self._meters_inject(count=5000)
+        ar_json = Meters.meters_to_udp_format(
+            send_pid=True,
+            send_tags=True,
+            send_dtc=False,
+        )
+        logger.info("Got ar_json.len=%s", len(ar_json))
+
+        for max_size, _ in [
+            (60000, 0.0),
+            (30000, 0.0),
+        ]:
+            logger.info("*** CHECK, NO DTC, max_size=%s", max_size)
+            ar_bin_chunk, ar_json_chunk = Meters.chunk_udp_array_via_serialization(ar_json, max_size_bytes=max_size)
+            logger.info("Got chunk size=%s/%s", len(ar_bin_chunk), len(ar_json_chunk))
+            for bin_buf in ar_bin_chunk:
+                logger.debug("Got chunk, NO DTC, len=%s, max=%s", len(bin_buf), max_size)
+                self.assertTrue(len(bin_buf) < max_size)
+
+            logger.info("Check now")
+            c = 0
+            for cur_ar in ar_json_chunk:
+                c += len(cur_ar)
+                for cur_item in cur_ar:
+                    self.assertIn(cur_item, ar_json)
+            self.assertEquals(c, len(ar_json))
+
+        # ----------------------
+        # Udp, DTC
+        # ----------------------
+        self._meters_inject(count=500)
+        ar_json = Meters.meters_to_udp_format(
+            send_pid=True,
+            send_tags=True,
+            send_dtc=True,
+        )
+        logger.info("Got ar_json.len=%s", len(ar_json))
+
+        for max_size, _ in [
+            (60000, 0.0),
+            (30000, 0.0),
+        ]:
+            logger.info("*** CHECK, DTC, max_size=%s", max_size)
+            ar_bin_chunk, ar_json_chunk = Meters.chunk_udp_array_via_serialization(ar_json, max_size_bytes=max_size)
+            logger.info("Got chunk size=%s/%s", len(ar_bin_chunk), len(ar_json_chunk))
+            for bin_buf in ar_bin_chunk:
+                logger.debug("Got chunk, DTC, len=%s, max=%s", len(bin_buf), max_size)
+                self.assertTrue(len(bin_buf) < max_size)
+
+            logger.info("Check now")
+            c = 0
+            for cur_ar in ar_json_chunk:
+                c += len(cur_ar)
+                for cur_item in cur_ar:
+                    self.assertIn(cur_item, ar_json)
+            self.assertEquals(c, len(ar_json))
 
     @unittest.skip("Need knockdaemon2")
     def test_meters_to_udp(self):

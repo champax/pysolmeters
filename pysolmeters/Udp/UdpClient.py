@@ -93,8 +93,6 @@ class UdpClient(object):
         :type bin_buf: str
         """
 
-        assert len(bin_buf) <= self._max_udp_size, "Udp overload, len={0}, max={1}".format(len(bin_buf), self._max_udp_size)
-
         if not self._soc:
             raise Exception("No socket")
 

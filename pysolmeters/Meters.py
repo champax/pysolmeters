@@ -472,6 +472,89 @@ class Meters(object):
     # UDP SEND
     # =================================
 
+    @classmethod
+    def chunk_udp_array_via_serialization(cls, ar_json, max_size_bytes):
+        """
+        Chunk a daemon udp list (list of list) toward a list of binary buffer, ready for udp send
+        This method uses per item serialization with manual concatenations.
+        :param ar_json: list of list
+        :type ar_json: list
+        :param max_size_bytes: int (max size of each binary buffer)
+        :type max_size_bytes: int
+        :return: list of binary buffer, list of chunked ar_json inner items (list of list of list)
+        :rtype tuple
+        """
+
+        # Check
+        if ar_json is None or len(ar_json) == 0:
+            return list(), list()
+
+        # We are going to serialize as :
+        # [
+        #   [...],
+        #   [...]
+        # ]
+
+        ar_bin_out = list()
+        ar_json_out = list()
+
+        # Temp array
+        ar_temp_s = list()
+        ar_temp_ar = list()
+
+        # Current temp bytes (with opening [ and closing ] and a margin for "," => so init to 3)
+        cur_temp_bytes = 3
+
+        # Browse
+        for cur_ar in ar_json:
+            # Serialize this one
+            s_cur_ar = ujson.dumps(cur_ar)
+            cur_len = len(s_cur_ar)
+
+            # Check
+            if cur_temp_bytes + cur_len > max_size_bytes:
+                # -----------------------------
+                # Got overload => close this one and initialize a new one
+                # -----------------------------
+                s_final = "[" + ",".join(ar_temp_s) + "]"
+                b_final = SolBase.unicode_to_binary(s_final, "utf8")
+                assert len(b_final) < max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes)
+
+                # Push output
+                ar_bin_out.append(b_final)
+                ar_json_out.append(ar_temp_ar)
+
+                # Re-init with current item
+                cur_temp_bytes = 3 + cur_len
+                ar_temp_s = [s_cur_ar]
+                ar_temp_ar = [cur_ar]
+            else:
+                # -----------------------------
+                # Accumulate
+                # -----------------------------
+
+                # +1 for the ","
+                cur_temp_bytes += cur_len + 1
+                ar_temp_s.append(s_cur_ar)
+                ar_temp_ar.append(cur_ar)
+
+        # -----------------------------
+        # Finish it if we have pending
+        # -----------------------------
+        if len(ar_temp_s) > 0:
+            s_final = "[" + ",".join(ar_temp_s) + "]"
+            b_final = SolBase.unicode_to_binary(s_final, "utf8")
+            assert len(b_final) < max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes)
+
+            # Push
+            ar_bin_out.append(b_final)
+            ar_json_out.append(ar_temp_ar)
+
+        # -----------------------------
+        # Over
+        # -----------------------------
+        return ar_bin_out, ar_json_out
+
     # noinspection PyProtectedMember
     @classmethod
     def send_udp_to_knockdaemon(
@@ -506,7 +589,6 @@ class Meters(object):
             send_tags=send_tags,
             send_dtc=send_dtc,
         )
-        b_buf = SolBase.unicode_to_binary(ujson.dumps(ar_json, ensure_ascii=False), "utf-8")
 
         # ---------------------------
         # UDP PUSH
@@ -515,11 +597,13 @@ class Meters(object):
         try:
             # Alloc
             u = UdpClient()
-            logger.info("Sending meters to udp, b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
 
-            if len(b_buf) > u._max_udp_size:
-                # TODO : Split ar_json in case of overload
-                logger.warning("Udp size overload (possible lost), b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
+            # ar_json is a list of list
+            # we have a maximum size, we must chunk it....
+            ar_bin_chunk, _ = cls.chunk_udp_array_via_serialization(
+                ar_json=ar_json,
+                max_size_bytes=u._max_udp_size,
+            )
 
             # Connect
             if PlatformTools.get_distribution_type() == "windows":
@@ -527,8 +611,20 @@ class Meters(object):
             else:
                 u.connect(linux_socket_name)
 
-            # Send
-            u.send_binary(b_buf)
+            # Fire
+            i = 0
+            for b_buf in ar_bin_chunk:
+                i += 1
+                if len(b_buf) > u._max_udp_size:
+                    logger.warning("Udp size overload (possible lost), b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
+
+                # Send
+                logger.info("Sending meters to udp (chunked), b_buf.len=%s, chunks=%s/%s, udp_max=%s", len(b_buf), i, len(ar_bin_chunk), u._max_udp_size)
+
+                u.send_binary(b_buf)
+
+                # Switch
+                SolBase.sleep(0)
         finally:
             if u:
                 u.disconnect()
