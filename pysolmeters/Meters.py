@@ -381,7 +381,7 @@ class Meters(object):
 
                 # Atomic
                 if isinstance(o, (AtomicInt, AtomicIntSafe, AtomicFloat, AtomicFloatSafe)):
-                    logger.info("k=%s%s, v=%s", cur_key, s_tags, o.get())
+                    logger.debug("k=%s%s, v=%s", cur_key, s_tags, o.get())
                 # DelayToCount
                 elif isinstance(o, (DelayToCount, DelayToCountSafe)):
                     o.log(s_tags)
