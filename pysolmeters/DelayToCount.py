@@ -112,17 +112,19 @@ class DelayToCount(object):
         :type s_tags: str
         """
 
-        ar = list(self._sorted_dict.keys())
-        for i in range(0, len(ar) - 1):
-            ms1 = ar[i]
-            ms2 = ar[i + 1]
-            if ms2 == max_int:
-                ms2 = "MAX"
-            ai = self._sorted_dict[ms1]
-            v = ai.get()
-            if v == 0:
-                continue
-            logger.info("%s%s [%s-%s], c=%s", self._instance_name, s_tags, ms1, ms2, v)
+        if logger.level <= logging.DEBUG:
+            ar = list(self._sorted_dict.keys())
+            for i in range(0, len(ar) - 1):
+                ms1 = ar[i]
+                ms2 = ar[i + 1]
+                if ms2 == max_int:
+                    ms2 = "MAX"
+                ai = self._sorted_dict[ms1]
+                v = ai.get()
+                if v == 0:
+                    continue
+                # Too many log in info level
+                logger.debug("%s%s [%s-%s], c=%s", self._instance_name, s_tags, ms1, ms2, v)
 
     def to_dict(self):
         """
