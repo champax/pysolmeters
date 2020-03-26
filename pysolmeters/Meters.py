@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 class Meters(object):
     """
     Static meter manager.
+    TODO : for aii etc... check that tags is a dict in input.
     """
 
     # Hash of meters
