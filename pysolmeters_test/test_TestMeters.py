@@ -165,6 +165,8 @@ class TestMeters(unittest.TestCase):
         self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
         self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
 
+        Meters.dtc("dtc1").to_dict()
+
         # Write
         Meters.write_to_logger()
 
