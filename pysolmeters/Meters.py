@@ -22,12 +22,11 @@
 # ===============================================================================
 """
 import logging
-import os
-# noinspection PyUnresolvedReferences
-import ujson
 from threading import Lock
 
 import gevent
+# noinspection PyUnresolvedReferences
+import ujson
 from pysolbase.PlatformTools import PlatformTools
 from pysolbase.SolBase import SolBase
 
@@ -394,11 +393,12 @@ class Meters(object):
     # SEND TO KNOCK DAEMON
     # =============================
 
+    # noinspection PyUnusedLocal
     @classmethod
     def meters_to_udp_format(cls, send_pid=True, send_tags=True, send_dtc=False):
         """
         Meter to udp
-        :param send_pid: bool
+        :param send_pid: bool (DEPRECATED)
         :type send_pid: bool
         :param send_tags : bool
         :type send_tags : bool
@@ -415,11 +415,8 @@ class Meters(object):
         # List to serialize
         ar_json = list()
 
-        # Pid
-        if send_pid:
-            d_tag = {"PID": str(os.getpid())}
-        else:
-            d_tag = {}
+        # We do NOT sent anymore PID (daemon will kick it)
+        d_tag = {}
 
         # Browse and build ar_json
         for k, d in cls._hash_meter.items():
@@ -519,7 +516,7 @@ class Meters(object):
                 # -----------------------------
                 s_final = "[" + ",".join(ar_temp_s) + "]"
                 b_final = SolBase.unicode_to_binary(s_final, "utf8")
-                assert len(b_final) < max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes)
+                assert len(b_final) <= max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes)
 
                 # Push output
                 ar_bin_out.append(b_final)

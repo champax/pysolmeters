@@ -23,7 +23,6 @@
 """
 
 import logging
-import os
 import unittest
 
 from pysolbase.SolBase import SolBase
@@ -317,44 +316,43 @@ class TestMeters(unittest.TestCase):
         total_ok = 0
         total_ko_not_found = 0
         total_ko_multiple_found = 0
-        pid = str(os.getpid())
         for s_key, d_tag, v in [
-            ("ai1", {"PID": pid}, 1),
-            ("ai1", {"flag": "FA", "PID": pid}, 2),
-            ("ai1", {"flag": "FB", "PID": pid}, 3),
+            ("ai1", {}, 1),
+            ("ai1", {"flag": "FA", }, 2),
+            ("ai1", {"flag": "FB", }, 3),
 
-            ("dtc1_0-50", {"PID": pid}, 1),
-            ("dtc1_50-100", {"PID": pid}, 1),
-            ("dtc1_100-500", {"PID": pid}, 1),
-            ("dtc1_500-1000", {"PID": pid}, 0),
-            ("dtc1_1000-2500", {"PID": pid}, 0),
-            ("dtc1_2500-5000", {"PID": pid}, 0),
-            ("dtc1_5000-10000", {"PID": pid}, 0),
-            ("dtc1_10000-30000", {"PID": pid}, 0),
-            ("dtc1_30000-60000", {"PID": pid}, 0),
-            ("dtc1_60000-MAX", {"PID": pid}, 0),
+            ("dtc1_0-50", {}, 1),
+            ("dtc1_50-100", {}, 1),
+            ("dtc1_100-500", {}, 1),
+            ("dtc1_500-1000", {}, 0),
+            ("dtc1_1000-2500", {}, 0),
+            ("dtc1_2500-5000", {}, 0),
+            ("dtc1_5000-10000", {}, 0),
+            ("dtc1_10000-30000", {}, 0),
+            ("dtc1_30000-60000", {}, 0),
+            ("dtc1_60000-MAX", {}, 0),
 
-            ("dtc1_0-50", {"flag": "FA", "PID": pid}, 1),
-            ("dtc1_50-100", {"flag": "FA", "PID": pid}, 1),
-            ("dtc1_100-500", {"flag": "FA", "PID": pid}, 1),
-            ("dtc1_500-1000", {"flag": "FA", "PID": pid}, 0),
-            ("dtc1_1000-2500", {"flag": "FA", "PID": pid}, 0),
-            ("dtc1_2500-5000", {"flag": "FA", "PID": pid}, 0),
-            ("dtc1_5000-10000", {"flag": "FA", "PID": pid}, 0),
-            ("dtc1_10000-30000", {"flag": "FA", "PID": pid}, 0),
-            ("dtc1_30000-60000", {"flag": "FA", "PID": pid}, 0),
-            ("dtc1_60000-MAX", {"flag": "FA", "PID": pid}, 0),
+            ("dtc1_0-50", {"flag": "FA", }, 1),
+            ("dtc1_50-100", {"flag": "FA", }, 1),
+            ("dtc1_100-500", {"flag": "FA", }, 1),
+            ("dtc1_500-1000", {"flag": "FA", }, 0),
+            ("dtc1_1000-2500", {"flag": "FA", }, 0),
+            ("dtc1_2500-5000", {"flag": "FA", }, 0),
+            ("dtc1_5000-10000", {"flag": "FA", }, 0),
+            ("dtc1_10000-30000", {"flag": "FA", }, 0),
+            ("dtc1_30000-60000", {"flag": "FA", }, 0),
+            ("dtc1_60000-MAX", {"flag": "FA", }, 0),
 
-            ("dtc1_0-50", {"flag": "FB", "PID": pid}, 2),
-            ("dtc1_50-100", {"flag": "FB", "PID": pid}, 2),
-            ("dtc1_100-500", {"flag": "FB", "PID": pid}, 2),
-            ("dtc1_500-1000", {"flag": "FB", "PID": pid}, 0),
-            ("dtc1_1000-2500", {"flag": "FB", "PID": pid}, 0),
-            ("dtc1_2500-5000", {"flag": "FB", "PID": pid}, 0),
-            ("dtc1_5000-10000", {"flag": "FB", "PID": pid}, 0),
-            ("dtc1_10000-30000", {"flag": "FB", "PID": pid}, 0),
-            ("dtc1_30000-60000", {"flag": "FB", "PID": pid}, 0),
-            ("dtc1_60000-MAX", {"flag": "FB", "PID": pid}, 0),
+            ("dtc1_0-50", {"flag": "FB", }, 2),
+            ("dtc1_50-100", {"flag": "FB", }, 2),
+            ("dtc1_100-500", {"flag": "FB", }, 2),
+            ("dtc1_500-1000", {"flag": "FB", }, 0),
+            ("dtc1_1000-2500", {"flag": "FB", }, 0),
+            ("dtc1_2500-5000", {"flag": "FB", }, 0),
+            ("dtc1_5000-10000", {"flag": "FB", }, 0),
+            ("dtc1_10000-30000", {"flag": "FB", }, 0),
+            ("dtc1_30000-60000", {"flag": "FB", }, 0),
+            ("dtc1_60000-MAX", {"flag": "FB", }, 0),
 
         ]:
             total_check += 1
@@ -509,7 +507,7 @@ class TestMeters(unittest.TestCase):
             logger.info("Got chunk size=%s/%s", len(ar_bin_chunk), len(ar_json_chunk))
             for bin_buf in ar_bin_chunk:
                 logger.debug("Got chunk, DTC, len=%s, max=%s", len(bin_buf), max_size)
-                self.assertTrue(len(bin_buf) < max_size)
+                self.assertTrue(len(bin_buf) <= max_size)
 
             logger.info("Check now")
             c = 0
