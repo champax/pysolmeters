@@ -668,7 +668,7 @@ class Meters(object):
 
         with Meters.UDP_SCHEDULER_LOCK:
             if Meters.UDP_SCHEDULER_STARTED:
-                logger.warn("Already started, exiting")
+                logger.warning("Already started, exiting")
                 return
 
             # Schedule
@@ -699,7 +699,7 @@ class Meters(object):
 
             # Check
             if not Meters.UDP_SCHEDULER_STARTED:
-                logger.warn("Already stopped, exiting")
+                logger.warning("Already stopped, exiting")
                 return
 
             Meters.UDP_SCHEDULER_STARTED = False
@@ -752,7 +752,7 @@ class Meters(object):
             logger.info("Udp scheduler push ok")
             Meters.aii("k.meters.udp.run.ok")
         except Exception as e:
-            logger.warn("Ex=%s", SolBase.extostr(e))
+            logger.warning("Ex=%s", SolBase.extostr(e))
             Meters.aii("k.meters.udp.run.ex")
         finally:
             # Re-schedule if required
