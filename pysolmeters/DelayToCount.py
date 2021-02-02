@@ -21,20 +21,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 # ===============================================================================
 """
-# noinspection PyBroadException
+import sys
+from collections import OrderedDict
+
 from threading import Lock
-
 from pysolbase.SolBase import SolBase
-
-from pysolmeters import max_int
 from pysolmeters.AtomicInt import AtomicInt
 
-# noinspection PyBroadException,PyPep8
-try:
-    from collections import OrderedDict
-except:
-    # noinspection PyPep8Naming,PyPackageRequirements,PyUnresolvedReferences
-    from ordereddict import OrderedDict
 import logging
 
 logger = logging.getLogger(__name__)
@@ -61,7 +54,7 @@ class DelayToCount(object):
 
         # Default is required
         if not ar_delay:
-            ar_delay = [0, 50, 100, 500, 1000, 2500, 5000, 10000, 30000, 60000, max_int]
+            ar_delay = [0, 50, 100, 500, 1000, 2500, 5000, 10000, 30000, 60000, sys.maxsize]
 
         # Name
         self._instance_name = instance_name
@@ -70,8 +63,8 @@ class DelayToCount(object):
         self._sorted_dict = OrderedDict()
 
         # Validate max int at the end (otherwise we may not be able to process and store some values)
-        if ar_delay[len(ar_delay) - 1] != max_int:
-            raise Exception("max_int required in last ar_delay item")
+        if ar_delay[len(ar_delay) - 1] != sys.maxsize:
+            raise Exception("sys.maxsize required in last ar_delay item")
 
         # Validate order and prepare the hash
         prev = None
@@ -95,9 +88,9 @@ class DelayToCount(object):
         """
 
         # Found the good one
-        aif = self._sorted_dict[max_int]
+        aif = self._sorted_dict[sys.maxsize]
         for ms, ai in self._sorted_dict.items():
-            if ms <= delay_ms and ms != max_int:
+            if ms <= delay_ms and ms != sys.maxsize:
                 aif = ai
             else:
                 break
@@ -117,7 +110,7 @@ class DelayToCount(object):
             for i in range(0, len(ar) - 1):
                 ms1 = ar[i]
                 ms2 = ar[i + 1]
-                if ms2 == max_int:
+                if ms2 == sys.maxsize:
                     ms2 = "MAX"
                 ai = self._sorted_dict[ms1]
                 v = ai.get()
@@ -134,11 +127,11 @@ class DelayToCount(object):
         """
 
         d = OrderedDict()
-        ar = self._sorted_dict.keys()
+        ar = list(self._sorted_dict.keys())
         for i in range(0, len(ar) - 1):
             ms1 = ar[i]
             ms2 = ar[i + 1]
-            if ms2 == max_int:
+            if ms2 == sys.maxsize:
                 ms2 = "MAX"
             ai = self._sorted_dict[ms1]
             out_k = "{0}|{1}-{2}".format(self._instance_name, ms1, ms2)
@@ -167,7 +160,7 @@ class DelayToCount(object):
             # Build key
             ms1 = ar[i]
             ms2 = ar[i + 1]
-            if ms2 == max_int:
+            if ms2 == sys.maxsize:
                 ms2 = "MAX"
             out_k = "{0}_{1}-{2}".format(self._instance_name, ms1, ms2)
             # Get value

@@ -24,8 +24,6 @@
 import sys
 from threading import Lock
 
-from pysolmeters import PY2
-
 
 class AtomicFloat(object):
     """
@@ -101,11 +99,7 @@ class AtomicFloat(object):
 
         if self.maximum_value and self._current_value > self.maximum_value:
             # Compute & reset with reminder if maximum value reached
-            if PY2:
-                # noinspection PyCompatibility,PyUnresolvedReferences
-                div = long(self._current_value / self.maximum_value)
-            else:
-                div = int(self._current_value / self.maximum_value)
+            div = int(self._current_value / self.maximum_value)
             reminder = self._current_value % self.maximum_value
             if div > 0:
                 if reminder == 0:
