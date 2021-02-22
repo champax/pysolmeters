@@ -48,7 +48,7 @@ class DelayToCount(object):
         :param ar_delay: Delay array to handle in millis (must finish with max int value, value in increasing order)
         :type ar_delay: list,tuple,None
         :param instance_name: Instance name
-        :type instance_name: bytes
+        :type instance_name: str
         :return Nothing
         """
 
@@ -200,7 +200,7 @@ class DelayToCountSafe(DelayToCount):
         :param ar_delay: Delay array to handle in millis (must finish with max int value, value in increasing order)
         :type ar_delay: list,tuple,None
         :param instance_name: Instance name
-        :type instance_name: bytes
+        :type instance_name: str
         :return Nothing
         """
 
