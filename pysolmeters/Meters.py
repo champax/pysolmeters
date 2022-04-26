@@ -387,7 +387,7 @@ class Meters(object):
                     o.log(s_tags)
                 # Other
                 else:
-                    logger.info("k=%s%s, o=%s", cur_key, s_tags, o)
+                    logger.debug("k=%s%s, o=%s", cur_key, s_tags, o)
 
     # =============================
     # SEND TO KNOCK DAEMON
@@ -617,7 +617,7 @@ class Meters(object):
                     logger.warning("Udp size overload (possible lost), b_buf.len=%s, udp_max=%s", len(b_buf), u._max_udp_size)
 
                 # Send
-                logger.info("Sending meters to udp (chunked), b_buf.len=%s, chunks=%s/%s, udp_max=%s", len(b_buf), i, len(ar_bin_chunk), u._max_udp_size)
+                logger.debug("Sending meters to udp (chunked), b_buf.len=%s, chunks=%s/%s, udp_max=%s", len(b_buf), i, len(ar_bin_chunk), u._max_udp_size)
 
                 u.send_binary(b_buf)
 
@@ -746,7 +746,7 @@ class Meters(object):
             )
 
             # Stat
-            logger.info("Udp scheduler push ok")
+            logger.debug("Udp scheduler push ok")
             Meters.aii("k.meters.udp.run.ok")
         except Exception as e:
             logger.warning("Ex=%s", SolBase.extostr(e))
