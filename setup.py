@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # ===============================================================================
 #
-# Copyright (C) 2013/2017 Laurent Labatut / Laurent Champagnac
+# Copyright (C) 2013/2025 Laurent Labatut / Laurent Champagnac
 #
 #
 #
@@ -67,8 +67,8 @@ def requirement_read(req_file):
 p_name = "pysolmeters"
 p_author = "Laurent Champagnac"
 p_email = "champagnac.laurent@gmail.com"
-p_url = "https://knock.center"
-p_version = "3.11.0"
+p_url = "https://github.com/champax/pysolmeters"
+p_version = "3.13.0"
 
 # Load
 req_list, dep_list = requirement_read("requirements.txt")
