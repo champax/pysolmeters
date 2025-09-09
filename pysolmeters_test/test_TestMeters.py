@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # ===============================================================================
 #
-# Copyright (C) 2013/2017 Laurent Labatut / Laurent Champagnac
+# Copyright (C) 2013/2025 Laurent Labatut / Laurent Champagnac
 #
 #
 #
@@ -74,14 +74,14 @@ class TestMeters(unittest.TestCase):
         self.assertIsNotNone(s1)
         self.assertGreater(len(s1), 0)
         self.assertIn(s1, Meters._hash_meter["tags_hash"])
-        self.assertEquals(d1, Meters._hash_meter["tags_hash"][s1])
+        self.assertEqual(d1, Meters._hash_meter["tags_hash"][s1])
 
         d2 = {"b": "vb", "a": "va"}
         s2 = Meters._tags_hash_compute_and_store(d2)
         self.assertIsNotNone(s2)
         self.assertGreater(len(s2), 0)
         self.assertIn(s2, Meters._hash_meter["tags_hash"])
-        self.assertEquals(d2, Meters._hash_meter["tags_hash"][s2])
+        self.assertEqual(d2, Meters._hash_meter["tags_hash"][s2])
 
         d3 = {"a": "za", "b": "zb"}
         s3 = Meters._tags_hash_compute_and_store(d3)
@@ -90,18 +90,18 @@ class TestMeters(unittest.TestCase):
         self.assertIn(s3, Meters._hash_meter["tags_hash"])
         self.assertNotEqual(s1, s3)
 
-        self.assertEquals(s1, s2)
-        self.assertEquals(len(Meters._hash_meter["tags_hash"]), 2)
+        self.assertEqual(s1, s2)
+        self.assertEqual(len(Meters._hash_meter["tags_hash"]), 2)
 
         Meters.reset()
-        self.assertEquals(len(Meters._hash_meter["tags_hash"]), 0)
+        self.assertEqual(len(Meters._hash_meter["tags_hash"]), 0)
 
         s_tags_1 = Meters.tags_format_for_logger(d1)
         s_tags_2 = Meters.tags_format_for_logger(d2)
         logger.info("Got s_tags_1=%s", s_tags_1)
         logger.info("Got s_tags_2=%s", s_tags_2)
-        self.assertEquals(s_tags_1, s_tags_2)
-        self.assertEquals(s_tags_1, " (a:va,b:vb) ")
+        self.assertEqual(s_tags_1, s_tags_2)
+        self.assertEqual(s_tags_1, " (a:va,b:vb) ")
 
     def test_key(self):
         """
@@ -111,18 +111,18 @@ class TestMeters(unittest.TestCase):
         d1 = {"a": "va", "b": "vb"}
         s1 = Meters._tags_hash_compute_and_store(d1)
         k1 = Meters._key_compute("zzz", d1)
-        self.assertEquals(k1, "zzz#" + s1)
+        self.assertEqual(k1, "zzz#" + s1)
 
         s_key, s_sash = Meters._key_split(k1)
-        self.assertEquals(s_key, "zzz")
-        self.assertEquals(s_sash, s1)
+        self.assertEqual(s_key, "zzz")
+        self.assertEqual(s_sash, s1)
 
-        self.assertEquals(Meters._key_compute("zzz", None), "zzz#")
-        self.assertEquals(Meters._key_compute("zzz", {}), "zzz#")
+        self.assertEqual(Meters._key_compute("zzz", None), "zzz#")
+        self.assertEqual(Meters._key_compute("zzz", {}), "zzz#")
 
         s_key, s_sash = Meters._key_split("zzz#")
-        self.assertEquals(s_key, "zzz")
-        self.assertEquals(s_sash, None)
+        self.assertEqual(s_key, "zzz")
+        self.assertEqual(s_sash, None)
 
     def test_meters(self):
         """
@@ -159,10 +159,10 @@ class TestMeters(unittest.TestCase):
         Meters.dtci("dtc1", 0)
         Meters.dtci("dtc1", 50)
         Meters.dtci("dtc1", 100)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
 
         Meters.dtc("dtc1").to_dict()
 
@@ -276,10 +276,10 @@ class TestMeters(unittest.TestCase):
         Meters.dtci("dtc1", 0)
         Meters.dtci("dtc1", 50)
         Meters.dtci("dtc1", 100)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
 
         Meters.dtci("dtc1", 0, tags={"flag": "FA"})
         Meters.dtci("dtc1", 50, tags={"flag": "FA"})
@@ -292,19 +292,19 @@ class TestMeters(unittest.TestCase):
         Meters.dtci("dtc1", 50, tags={"flag": "FB"})
         Meters.dtci("dtc1", 100, tags={"flag": "FB"})
 
-        self.assertEquals(Meters._hash_meter["a_int"]["ai1#"].get(), 1)
-        self.assertEquals(Meters._hash_meter["a_int"]["ai1#" + hca].get(), 2)
-        self.assertEquals(Meters._hash_meter["a_int"]["ai1#" + hcb].get(), 3)
+        self.assertEqual(Meters._hash_meter["a_int"]["ai1#"].get(), 1)
+        self.assertEqual(Meters._hash_meter["a_int"]["ai1#" + hca].get(), 2)
+        self.assertEqual(Meters._hash_meter["a_int"]["ai1#" + hcb].get(), 3)
 
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[0].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[50].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[100].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[500].get(), 0)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[0].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[50].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[100].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[500].get(), 0)
 
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[0].get(), 2)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[50].get(), 2)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[100].get(), 2)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[500].get(), 0)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[0].get(), 2)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[50].get(), 2)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[100].get(), 2)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[500].get(), 0)
 
         # Write
         Meters.write_to_logger()
@@ -372,10 +372,10 @@ class TestMeters(unittest.TestCase):
                 total_ok += 1
 
         # Final
-        self.assertEquals(total_ko_multiple_found, 0)
-        self.assertEquals(total_ko_multiple_found, 0)
-        self.assertEquals(total_ok, total_check)
-        self.assertEquals(len(ar_udp), total_check)
+        self.assertEqual(total_ko_multiple_found, 0)
+        self.assertEqual(total_ko_multiple_found, 0)
+        self.assertEqual(total_ok, total_check)
+        self.assertEqual(len(ar_udp), total_check)
 
     def test_meters_with_tags_b(self):
         """
@@ -395,10 +395,10 @@ class TestMeters(unittest.TestCase):
         Meters.dtci("dtc1", 0)
         Meters.dtci("dtc1", 50)
         Meters.dtci("dtc1", 100)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
 
         Meters.dtci("dtc1", 0, tags={"flag1": "FA"})
         Meters.dtci("dtc1", 50, tags={"flag1": "FA"})
@@ -411,19 +411,19 @@ class TestMeters(unittest.TestCase):
         Meters.dtci("dtc1", 50, tags={"flag2": "FB"})
         Meters.dtci("dtc1", 100, tags={"flag2": "FB"})
 
-        self.assertEquals(Meters._hash_meter["a_int"]["ai1#"].get(), 1)
-        self.assertEquals(Meters._hash_meter["a_int"]["ai1#" + hca].get(), 2)
-        self.assertEquals(Meters._hash_meter["a_int"]["ai1#" + hcb].get(), 3)
+        self.assertEqual(Meters._hash_meter["a_int"]["ai1#"].get(), 1)
+        self.assertEqual(Meters._hash_meter["a_int"]["ai1#" + hca].get(), 2)
+        self.assertEqual(Meters._hash_meter["a_int"]["ai1#" + hcb].get(), 3)
 
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[0].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[50].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[100].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[500].get(), 0)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[0].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[50].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[100].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hca]._sorted_dict[500].get(), 0)
 
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[0].get(), 2)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[50].get(), 2)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[100].get(), 2)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[500].get(), 0)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[0].get(), 2)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[50].get(), 2)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[100].get(), 2)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#" + hcb]._sorted_dict[500].get(), 0)
 
         # Write
         Meters.write_to_logger()
@@ -485,7 +485,7 @@ class TestMeters(unittest.TestCase):
                 c += len(cur_ar)
                 for cur_item in cur_ar:
                     self.assertIn(cur_item, ar_json)
-            self.assertEquals(c, len(ar_json))
+            self.assertEqual(c, len(ar_json))
 
         # ----------------------
         # Udp, DTC
@@ -515,7 +515,7 @@ class TestMeters(unittest.TestCase):
                 c += len(cur_ar)
                 for cur_item in cur_ar:
                     self.assertIn(cur_item, ar_json)
-            self.assertEquals(c, len(ar_json))
+            self.assertEqual(c, len(ar_json))
 
     @unittest.skip("Need knockdaemon2")
     def test_meters_to_udp(self):
@@ -553,10 +553,10 @@ class TestMeters(unittest.TestCase):
         Meters.dtci("dtc1", 0)
         Meters.dtci("dtc1", 50)
         Meters.dtci("dtc1", 100)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
-        self.assertEquals(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[0].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[50].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[100].get(), 1)
+        self.assertEqual(Meters._hash_meter["dtc"]["dtc1#"]._sorted_dict[500].get(), 0)
 
         # Write
         Meters.write_to_logger()
