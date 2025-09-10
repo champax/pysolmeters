@@ -13,3 +13,4 @@
 /.tox/
 /build/
 /pysolmeters.egg-info/
+/dist/
