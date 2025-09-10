@@ -32,7 +32,7 @@ p_name = "pysolmeters"
 p_author = "Laurent Champagnac"
 p_email = "champagnac.laurent@gmail.com"
 p_url = "https://github.com/champax/pysolmeters"
-p_version = "3.13.2"
+p_version = "3.13.3"
 
 setup(
 
