@@ -517,7 +517,7 @@ class Meters(object):
                 # -----------------------------
                 s_final = "[" + ",".join(ar_temp_s) + "]"
                 b_final = SolBase.unicode_to_binary(s_final, "utf8")
-                Assert.check(len(b_final) <= max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes))
+                Assert.check(Exception, len(b_final) <= max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes))
 
                 # Push output
                 ar_bin_out.append(b_final)
@@ -543,7 +543,7 @@ class Meters(object):
         if len(ar_temp_s) > 0:
             s_final = "[" + ",".join(ar_temp_s) + "]"
             b_final = SolBase.unicode_to_binary(s_final, "utf8")
-            Assert.check(len(b_final) < max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes))
+            Assert.check(Exception, len(b_final) < max_size_bytes, "Got overload, cur=%s, max=%s" % (len(b_final), max_size_bytes))
 
             # Push
             ar_bin_out.append(b_final)
